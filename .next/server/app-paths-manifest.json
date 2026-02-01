@@ -1,0 +1,7 @@
+{
+  "/rhythms/page": "app/rhythms/page.js",
+  "/vault/login/page": "app/vault/login/page.js",
+  "/vault/page": "app/vault/page.js",
+  "/page": "app/page.js",
+  "/vault/register/page": "app/vault/register/page.js"
+}

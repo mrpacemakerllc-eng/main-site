@@ -10,6 +10,7 @@ export interface Rhythm {
   explanation: string;
   pacingIndication: boolean;
   premium: boolean; // true = requires subscription
+  leadLabel?: string; // Lead label to display (default: "Lead II")
 }
 
 // Free rhythm IDs (available without subscription)
@@ -34,6 +35,7 @@ export const sinusBradycardia: Rhythm = {
 A normal sinus rhythm running slower than 60 bpm. The SA node is firing correctly — just at a reduced rate.
 
 RECOGNIZE IT
+• Regularity: Regular
 • Regular R-R intervals
 • Upright P wave before every QRS (1:1 conduction)
 • PR interval 0.12–0.20 sec
@@ -77,6 +79,7 @@ export const normalSinusRhythm: Rhythm = {
 The gold standard — a healthy heart rhythm originating from the SA node at 60–100 bpm.
 
 RECOGNIZE IT
+• Regularity: Regular
 • Regular R-R intervals
 • Upright P wave before every QRS
 • PR interval 0.12–0.20 sec
@@ -108,6 +111,7 @@ export const sinusTachycardia: Rhythm = {
 The SA node firing faster than 100 bpm. This is a response to something — not a primary arrhythmia. The heart is doing exactly what it's told.
 
 RECOGNIZE IT
+• Regularity: Regular
 • Regular R-R intervals
 • Upright P wave before every QRS (may merge with preceding T at high rates)
 • PR interval 0.12–0.20 sec
@@ -150,6 +154,7 @@ export const firstDegreeBlock: Rhythm = {
 Every atrial impulse conducts to the ventricles — it just takes longer than normal. The AV node is slow, not blocked.
 
 RECOGNIZE IT
+• Regularity: Regular
 • Regular R-R intervals
 • P wave before every QRS (1:1 conduction preserved)
 • PR interval > 0.20 sec — this is THE finding
@@ -193,6 +198,7 @@ export const mobitzType1: Rhythm = {
 Second degree AV block where the AV node gets progressively more fatigued with each beat until it finally fails to conduct one. Then it resets and the cycle repeats.
 
 RECOGNIZE IT
+• Regularity: Regularly irregular (grouped beating)
 • PR interval gets longer with each beat → then a QRS drops
 • Grouped beating pattern (e.g., 4:3, 3:2 conduction ratios)
 • After the dropped beat, the PR resets to its shortest length
@@ -238,6 +244,7 @@ export const junctionalRhythm: Rhythm = {
 The AV junction acts as a backup pacemaker when the SA node fails. This is a rescue rhythm — the junction is keeping the patient alive at its intrinsic rate of 40–60 bpm.
 
 RECOGNIZE IT
+• Regularity: Regular
 • Regular R-R intervals
 • P waves absent, inverted (before QRS), or retrograde (after QRS)
 • Rate 40–60 bpm (the junction's intrinsic rate)
@@ -281,6 +288,7 @@ export const completeHeartBlock: Rhythm = {
 The electrical connection between the atria and ventricles is completely severed. The atria and ventricles beat independently — no atrial impulse reaches the ventricles. A slow escape rhythm keeps the patient alive.
 
 RECOGNIZE IT
+• Regularity: Regular P-P AND Regular R-R (but independent of each other)
 • P waves march through at their own rate (typically 60–80 bpm)
 • QRS complexes march through at a DIFFERENT, slower rate (30–40 bpm)
 • Regular P-P intervals AND regular R-R intervals — but NO relationship between them
@@ -326,6 +334,7 @@ export const mobitzType2: Rhythm = {
 Second degree AV block where beats drop suddenly and without warning. The PR interval stays constant in conducted beats — then a QRS just doesn't show up. The block is below the AV node (His-Purkinje system) and is unreliable.
 
 RECOGNIZE IT
+• Regularity: Regularly irregular (dropped beats)
 • PR interval is CONSTANT in all conducted beats
 • QRS suddenly drops — no progressive PR change
 • Often wide QRS (infranodal disease)
@@ -370,6 +379,7 @@ export const block2to1: Rhythm = {
 A second degree AV block where exactly every other P wave is blocked. Two P waves for every one QRS. The problem: you can't tell if it's Mobitz I or Mobitz II because you only see one conducted beat between drops — so there's no opportunity to see progressive PR lengthening.
 
 RECOGNIZE IT
+• Regularity: Regular (fixed 2:1 conduction ratio)
 • 2 P waves for every 1 QRS (2:1 conduction ratio)
 • Regular P-P intervals at the atrial rate
 • Regular R-R intervals at half the atrial rate
@@ -416,6 +426,7 @@ export const afibSlowResponse: Rhythm = {
 Atrial fibrillation with a ventricular rate below 60 bpm. The atria are fibrillating chaotically, but the AV node is letting very few impulses through — either because of disease or medications.
 
 RECOGNIZE IT
+• Regularity: Irregularly irregular
 • Irregularly irregular R-R intervals — the hallmark of AFib
 • No P waves — fibrillatory, chaotic baseline between QRS complexes
 • Ventricular rate < 60 bpm
@@ -458,6 +469,7 @@ export const sinusPause: Rhythm = {
 The SA node momentarily fails to fire, creating a gap in the rhythm. It then resets and picks up at a slightly different point in its cycle.
 
 RECOGNIZE IT
+• Regularity: Regularly irregular (occasional pauses)
 • Normal sinus rhythm present before and after the pause
 • Sudden gap with no P-QRST complexes
 • The pause is NOT an exact multiple of the normal P-P interval (the SA node reset mid-cycle)
@@ -499,6 +511,7 @@ export const sinusArrest: Rhythm = {
 The SA node completely stops firing for two or more full cycles. Unlike a sinus pause (where the node resets mid-cycle), in arrest the node misses entire cycles cleanly.
 
 RECOGNIZE IT
+• Regularity: Regularly irregular (prolonged pauses)
 • Prolonged gap with no P-QRST complexes
 • The pause IS an exact multiple of the normal P-P interval (2×, 3×)
 • May see junctional or ventricular escape beats during long pauses
@@ -539,6 +552,7 @@ export const ventricularTachycardia: Rhythm = {
 A life-threatening tachycardia originating from the ventricles. Wide, fast, and dangerous. This is a cardiac emergency until proven otherwise.
 
 RECOGNIZE IT
+• Regularity: Regular (monomorphic VT)
 • Wide QRS (> 0.12 sec, often > 0.14 sec)
 • Rate 100–250 bpm
 • Regular R-R intervals (monomorphic VT)
@@ -582,6 +596,7 @@ export const ventricularFibrillation: Rhythm = {
 Cardiac arrest. The ventricles are quivering chaotically with no organized contraction and zero cardiac output. The patient is clinically dead and needs immediate defibrillation.
 
 RECOGNIZE IT
+• Regularity: Chaotic (no organized rhythm)
 • No identifiable P waves, QRS complexes, or T waves
 • Chaotic, disorganized electrical activity
 • Coarse VF = larger undulations (better prognosis, more responsive to shock)
@@ -618,17 +633,20 @@ export const torsadesDePointes: Rhythm = {
   id: 'torsades',
   name: 'Torsades de Pointes',
   rate: 200,
-  description: 'Polymorphic VT with twisting QRS axis, associated with prolonged QT',
+  description: 'Polymorphic VT with twisting QRS axis, associated with prolonged QT. DEFIBRILLATE if pulseless!',
   waveform: 'torsades',
-  pacingIndication: false,
+  pacingIndication: true,
   premium: true,
   explanation: `WHAT IS IT
 "Twisting of the points" — a polymorphic ventricular tachycardia where the QRS axis rotates around the baseline, creating a distinctive waxing-and-waning pattern. Associated with prolonged QT interval.
 
+⚠️ THIS IS A SHOCKABLE RHYTHM — DEFIBRILLATION NEEDED IF PULSELESS OR SUSTAINED
+
 RECOGNIZE IT
+• Regularity: Regular (polymorphic pattern)
 • QRS complexes twist around the baseline
 • Amplitude waxes and wanes in a sinusoidal spindle pattern
-• Rate 150–250 bpm
+• Rate 150–300 bpm
 • Often preceded by a "short-long-short" sequence (PVC → pause → PVC triggers it)
 • Prolonged QT on baseline ECG
 
@@ -644,18 +662,30 @@ CAUSES
 • Bradycardia (longer pauses = longer QT)
 
 TREATMENT — DIFFERENT FROM STANDARD VT
-• IV Magnesium 2g push — first line, give IMMEDIATELY
-• Overdrive pacing (increase heart rate → shortens QT)
-• Isoproterenol IV (bridge to pacing)
-• STOP all QT-prolonging medications
-• Correct K+ to > 4.0 mEq/L
-• Defibrillate if sustained or pulseless
+1. DEFIBRILLATE if pulseless or sustained — this is a shockable rhythm!
+2. IV Magnesium 2g push — first line for stable patients, give IMMEDIATELY
+3. Overdrive pacing at 90–110 bpm (shortens QT interval)
+4. Isoproterenol IV (bridge to pacing)
+5. STOP all QT-prolonging medications
+6. Correct K+ to > 4.0 mEq/L
 
 PACING — OVERDRIVE PACING IS THERAPEUTIC
-Temporary overdrive pacing at 90–110 bpm shortens the QT interval and suppresses Torsades. This is one of the few arrhythmias where pacing is part of acute treatment.
+┌────────────────────────────────────────────────────────────┐
+│  Temporary overdrive pacing at 90–110 bpm shortens the    │
+│  QT interval and SUPPRESSES Torsades.                     │
+│                                                           │
+│  This is one of the few arrhythmias where pacing is       │
+│  part of ACUTE treatment — similar to post-AV node        │
+│  ablation pacing for rate support.                        │
+│                                                           │
+│  Faster heart rate = shorter QT = prevents Torsades       │
+└────────────────────────────────────────────────────────────┘
+
+DEFIBRILLATION
+If the patient is pulseless or hemodynamically unstable, DEFIBRILLATE immediately. Torsades is a shockable rhythm. Don't waste time — shock first, then give magnesium and set up pacing.
 
 KEY TAKEAWAY
-Torsades is NOT regular VT — avoid amiodarone (it prolongs QT and can worsen the arrhythmia). Magnesium is first-line treatment, with overdrive pacing as an option. The treatment approach differs from standard VT. Check the QT interval to identify the underlying cause.`
+Torsades is NOT regular VT — avoid amiodarone (it prolongs QT and can worsen the arrhythmia). Magnesium is first-line for stable patients. Overdrive pacing at 90-110 bpm is therapeutic. DEFIBRILLATE if pulseless or sustained. The treatment approach differs from standard VT.`
 };
 
 // NSR with PAC (Premature Atrial Contraction)
@@ -671,6 +701,7 @@ export const nsrWithPAC: Rhythm = {
 A normal sinus rhythm interrupted by premature beats originating from an ectopic atrial focus. An irritable spot in the atrium fires early.
 
 RECOGNIZE IT
+• Regularity: Regularly irregular (early beats)
 • Underlying regular sinus rhythm
 • Early beat appears sooner than expected
 • P wave before the early beat looks DIFFERENT from sinus P waves (peaked, notched, or inverted)
@@ -712,6 +743,7 @@ export const blockedPAC: Rhythm = {
 A premature atrial contraction that occurs so early that the AV node is still refractory and cannot conduct the impulse to the ventricles. You see a P wave but NO QRS follows it.
 
 RECOGNIZE IT
+• Regularity: Regularly irregular (pauses from blocked beats)
 • Underlying regular sinus rhythm
 • Early, abnormal P wave appears (often distorting the preceding T wave)
 • NO QRS follows the premature P wave
@@ -750,6 +782,7 @@ export const nsrWithPJC: Rhythm = {
 A premature beat originating from the AV junction that fires early, interrupting the normal sinus rhythm. The impulse travels both up to the atria (retrograde) and down to the ventricles simultaneously.
 
 RECOGNIZE IT
+• Regularity: Regularly irregular (early beats)
 • Underlying regular sinus rhythm
 • Early beat appears sooner than expected
 • Narrow QRS (same as sinus beats - uses normal conduction system)
@@ -792,6 +825,7 @@ export const nsrWithPVC: Rhythm = {
 A normal sinus rhythm interrupted by premature beats originating from the ventricles. The ventricle fires on its own before the next sinus beat arrives — producing a wide, bizarre QRS with no preceding P wave.
 
 RECOGNIZE IT
+• Regularity: Regularly irregular (early beats)
 • Underlying regular sinus rhythm
 • Early beat with NO preceding P wave
 • Wide, bizarre QRS (> 0.12 sec) — looks completely different from sinus beats
@@ -836,6 +870,7 @@ export const aflutterSVR: Rhythm = {
 Atrial flutter with a high conduction block (6:1) resulting in a slow ventricular rate of ~50 bpm. The atria flutter at ~300/min but only every 6th impulse reaches the ventricles.
 
 RECOGNIZE IT
+• Regularity: Regular (fixed conduction ratio)
 • Sawtooth "F waves" at ~300/min — look for the classic inverted sawtooth pattern in lead II
 • Regular ventricular response at ~50 bpm (300 ÷ 6 = 50)
 • Narrow QRS (unless bundle branch block)
@@ -879,6 +914,7 @@ export const aflutterRVR: Rhythm = {
 Atrial flutter with 2:1 conduction — the most common and most missed form of flutter. The atria flutter at ~300/min and every other impulse conducts, producing a ventricular rate of ~150 bpm.
 
 RECOGNIZE IT
+• Regularity: Regular (fixed 2:1 conduction)
 • Regular narrow-complex tachycardia at ~150 bpm
 • Sawtooth F waves partially hidden by QRS and T waves (hard to see at 2:1)
 • Flutter waves visible between every other QRS if you look carefully
@@ -921,6 +957,7 @@ export const afibRVR: Rhythm = {
 Atrial fibrillation with a fast ventricular rate (> 100 bpm). The atria are fibrillating chaotically and the AV node is letting too many impulses through, driving the ventricles fast.
 
 RECOGNIZE IT
+• Regularity: Irregularly irregular
 • Irregularly irregular R-R intervals — the defining feature of AFib
 • No P waves — chaotic, undulating baseline
 • Ventricular rate > 100 bpm (often 130–180 bpm)
@@ -967,6 +1004,7 @@ export const sinusArrhythmia: Rhythm = {
 A normal variant where the heart rate subtly speeds up with inspiration and slows with expiration. The SA node is still in control — the rate just fluctuates with breathing.
 
 RECOGNIZE IT
+• Regularity: Regularly irregular (varies with breathing)
 • Normal upright P waves before every QRS
 • PR interval constant (0.12–0.20 sec)
 • Narrow QRS
@@ -1008,6 +1046,7 @@ export const asystole: Rhythm = {
 The absence of all cardiac electrical activity. Flat line. The heart has no electrical function. This is the worst cardiac arrest rhythm with the poorest prognosis.
 
 RECOGNIZE IT
+• Regularity: Absent (no rhythm)
 • Flat line — no P waves, no QRS, no T waves
 • Patient is pulseless and unresponsive
 • Must confirm in at least 2 leads (rule out lead disconnect / artifact)
@@ -1054,6 +1093,7 @@ export const svt: Rhythm = {
 A rapid, regular tachycardia originating above the ventricles, most commonly from a reentrant circuit involving the AV node (AVNRT) or an accessory pathway (AVRT). Turns on and off abruptly like a light switch.
 
 RECOGNIZE IT
+• Regularity: Regular
 • Rate 150–250 bpm (often exactly 150–180)
 • Regular R-R intervals
 • Narrow QRS (< 0.12 sec)
@@ -1097,6 +1137,7 @@ export const wpw: Rhythm = {
 WPW is a pre-excitation syndrome caused by an accessory pathway (Bundle of Kent) that bypasses the AV node. Impulses travel down the accessory pathway AND the AV node simultaneously, causing early ventricular activation (pre-excitation) that produces the characteristic delta wave.
 
 RECOGNIZE IT
+• Regularity: Regular
 • Short PR interval (<120 ms or <3 small boxes)
 • Delta wave: slurred upstroke of QRS (initial slurring)
 • Wide QRS (>100 ms) due to fusion of early accessory pathway conduction
@@ -1143,6 +1184,7 @@ export const accelJunctional: Rhythm = {
 The AV junction is firing at an enhanced rate (60–100 bpm) — faster than its normal escape rate but not fast enough to be tachycardia. Something is irritating the junction and speeding it up.
 
 RECOGNIZE IT
+• Regularity: Regular
 • Rate 60–100 bpm
 • P waves absent, inverted before QRS, or retrograde after QRS
 • Narrow QRS complex
@@ -1186,6 +1228,7 @@ export const junctionalTachycardia: Rhythm = {
 The AV junction is firing rapidly at > 100 bpm. This is the fastest of the three junctional rhythms and often indicates a seriously irritated junction — think toxicity or post-surgical irritation.
 
 RECOGNIZE IT
+• Regularity: Regular
 • Rate > 100 bpm (typically 100–180 bpm)
 • P waves absent, inverted, or retrograde
 • Narrow QRS complex
@@ -1227,6 +1270,7 @@ export const wanderingAtrialPacemaker: Rhythm = {
 The pacemaker site shifts between the SA node and multiple atrial foci, producing P waves of different shapes. Like a conductor's baton passing between musicians — each one plays a slightly different note.
 
 RECOGNIZE IT
+• Regularity: Irregularly irregular
 • At least 3 different P wave morphologies (shapes change beat to beat)
 • Rate 60–100 bpm
 • Irregular R-R intervals (different foci fire at slightly different rates)
@@ -1267,6 +1311,7 @@ export const mat: Rhythm = {
 Multiple ectopic atrial foci firing rapidly and chaotically, producing an irregularly irregular rhythm with 3+ P wave morphologies at a rate > 100 bpm. Almost always associated with severe lung disease.
 
 RECOGNIZE IT
+• Regularity: Irregularly irregular
 • At least 3 different P wave morphologies
 • Rate > 100 bpm (typically 100–150 bpm)
 • Irregularly irregular R-R intervals
@@ -1311,6 +1356,7 @@ export const atrialTachycardia: Rhythm = {
 A rapid rhythm from a single ectopic atrial focus (not the SA node). One irritable spot in the atrium is firing repetitively at a fast rate. The P wave shape is different from sinus because the impulse originates from a different location.
 
 RECOGNIZE IT
+• Regularity: Regular
 • Rate 100–250 bpm
 • Abnormal P wave morphology (different shape from sinus P waves)
 • P waves precede each QRS (visible between beats)
@@ -1345,33 +1391,55 @@ The P wave tells you everything. If the tachycardia has visible P waves that loo
 // Idioventricular Rhythm (IVR)
 export const idioventricularRhythm: Rhythm = {
   id: 'ivr',
-  name: 'Idioventricular Rhythm',
+  name: 'Idioventricular Rhythm (IVR)',
   rate: 35,
-  description: 'Ventricular escape rhythm, rate 20-40 bpm, wide QRS, no P waves',
+  description: 'IVR = Idioventricular Rhythm. Ventricular escape rhythm at 20-40 bpm with wide QRS and no P waves. The slowest escape rhythm.',
   waveform: 'ivr',
   pacingIndication: true,
   premium: true,
   explanation: `WHAT IS IT
-The last-resort escape rhythm. Both the SA node and AV junction have failed, and the ventricles are generating their own rhythm at a dangerously slow rate of 20–40 bpm. This is the bottom of the pacemaker hierarchy.
+IVR = Idioventricular Rhythm (pronounced "eye-dee-oh-ventricular")
+
+The last-resort escape rhythm. Both the SA node and AV junction have failed, and the ventricles are generating their own rhythm at a dangerously slow rate of 20–40 bpm. This is the bottom of the pacemaker hierarchy — the ventricles' intrinsic rate.
 
 RECOGNIZE IT
+• Regularity: Regular
 • Rate 20–40 bpm (intrinsic ventricular escape rate)
 • Wide, bizarre QRS (> 0.12 sec) — ventricular origin
 • No P waves
 • Regular R-R intervals
 • Very slow — patient is likely hemodynamically compromised
 
-HOW TO TELL IT APART
-• vs AIVR → Same morphology but AIVR runs at 40–100 bpm (enhanced). IVR is the slowest version at 20–40.
-• vs Junctional Escape → Junctional has narrow QRS. IVR has wide QRS.
+HOW TO TELL IVR vs AIVR (KEY DISTINCTION)
+┌────────────────────────────────────────────────────────────┐
+│  IVR (Idioventricular Rhythm)                              │
+│  • Rate: 20–40 bpm (SLOW escape)                           │
+│  • Cause: SA and AV node failure                           │
+│  • Clinical: EMERGENT — needs pacing                       │
+│  • Treatment: Pacemaker urgently                           │
+├────────────────────────────────────────────────────────────┤
+│  AIVR (Accelerated Idioventricular Rhythm)                 │
+│  • Rate: 40–100 bpm (ENHANCED, not escape)                 │
+│  • Cause: Usually reperfusion after MI                     │
+│  • Clinical: BENIGN — often a good sign                    │
+│  • Treatment: Usually none needed                          │
+└────────────────────────────────────────────────────────────┘
+
+The ONLY difference is rate:
+• IVR = 20–40 bpm = Bad (escape, needs pacing)
+• AIVR = 40–100 bpm = Usually good (enhanced, often post-reperfusion)
+
+HOW TO TELL IT APART FROM OTHER RHYTHMS
+• vs Junctional Escape → Junctional has NARROW QRS (40-60 bpm). IVR has WIDE QRS (20-40 bpm).
 • vs Complete Heart Block → CHB shows P waves marching through independently. IVR has no visible P waves.
+• vs VT → VT is > 100 bpm and unstable. IVR is < 40 bpm.
 
 CAUSES
 • Complete failure of SA node and AV junction
 • Severe cardiac disease
 • Post-cardiac arrest
 • Massive MI
-• Drug toxicity
+• Drug toxicity (beta blockers, calcium channel blockers)
 
 TREATMENT
 • Do NOT suppress this rhythm — it's keeping the patient alive
@@ -1392,24 +1460,46 @@ export const aivr: Rhythm = {
   id: 'aivr',
   name: 'Accelerated Idioventricular Rhythm (AIVR)',
   rate: 75,
-  description: 'Enhanced ventricular rhythm, rate 40-100 bpm, wide QRS, often post-reperfusion',
+  description: 'AIVR = Accelerated Idioventricular Rhythm. Enhanced ventricular rhythm at 40-100 bpm with wide QRS. Often a GOOD sign post-reperfusion.',
   waveform: 'aivr',
   pacingIndication: false,
   premium: true,
   explanation: `WHAT IS IT
-A ventricular rhythm running at an enhanced rate (40–100 bpm) — faster than a ventricular escape but not fast enough to be VT. Most commonly seen after successful reperfusion of a blocked coronary artery.
+AIVR = Accelerated Idioventricular Rhythm (pronounced "A-I-V-R")
+
+A ventricular rhythm running at an enhanced rate (40–100 bpm) — faster than a ventricular escape but not fast enough to be VT. Most commonly seen after successful reperfusion of a blocked coronary artery. This is usually a GOOD sign!
 
 RECOGNIZE IT
-• Rate 40–100 bpm
-• Wide, bizarre QRS complex
+• Regularity: Regular
+• Rate 40–100 bpm (faster than IVR's 20-40)
+• Wide, bizarre QRS complex (> 0.12 sec)
 • No P waves or AV dissociation
 • Regular R-R intervals
 • Often transient — starts and stops on its own
 
-HOW TO TELL IT APART
-• vs IVR → IVR is 20–40 bpm (escape). AIVR is 40–100 bpm (enhanced).
+HOW TO TELL AIVR vs IVR (KEY DISTINCTION)
+┌────────────────────────────────────────────────────────────┐
+│  AIVR (Accelerated Idioventricular Rhythm)                 │
+│  • Rate: 40–100 bpm (ENHANCED, not escape)                 │
+│  • Cause: Usually reperfusion after MI                     │
+│  • Clinical: BENIGN — often a GOOD sign                    │
+│  • Treatment: Usually none needed                          │
+├────────────────────────────────────────────────────────────┤
+│  IVR (Idioventricular Rhythm)                              │
+│  • Rate: 20–40 bpm (SLOW escape)                           │
+│  • Cause: SA and AV node failure                           │
+│  • Clinical: EMERGENT — needs pacing                       │
+│  • Treatment: Pacemaker urgently                           │
+└────────────────────────────────────────────────────────────┘
+
+The ONLY difference is rate:
+• AIVR = 40–100 bpm = Usually good (enhanced, often post-reperfusion)
+• IVR = 20–40 bpm = Bad (escape, needs pacing)
+
+HOW TO TELL IT APART FROM OTHER RHYTHMS
 • vs VT → VT is > 100 bpm and dangerous. AIVR is < 100 bpm and usually benign.
-• vs Accelerated Junctional → Junctional has narrow QRS. AIVR has wide QRS.
+• vs Accelerated Junctional → Junctional has NARROW QRS. AIVR has WIDE QRS.
+• vs NSR with PVCs → PVCs are intermittent. AIVR is a sustained run of wide complexes.
 
 CAUSES
 • Coronary reperfusion (the classic cause — it's a GOOD sign post-PCI)
@@ -1425,9 +1515,14 @@ TREATMENT
 • Monitor and reassure
 
 PACING — NOT INDICATED
+AIVR does not require pacing. Unlike slow IVR (20-40 bpm), AIVR runs at an adequate rate.
 
 KEY TAKEAWAY
-AIVR post-MI is good news — it means blood flow has been restored to the heart muscle. The cath lab team loves seeing this rhythm after opening a blocked artery. It's one of the few ventricular rhythms you can smile about. Don't treat it — it'll go away on its own.`
+AIVR post-MI is good news — it means blood flow has been restored to the heart muscle. The cath lab team loves seeing this rhythm after opening a blocked artery. It's one of the few ventricular rhythms you can smile about. Don't treat it — it'll go away on its own.
+
+Remember: Same wide QRS morphology, different rates:
+• IVR (20-40 bpm) = Emergency, needs pacing
+• AIVR (40-100 bpm) = Usually benign, often good news`
 };
 
 // NSR with Bigeminal PVCs
@@ -1442,6 +1537,7 @@ export const ventricularBigeminy: Rhythm = {
   explanation: `Ventricular bigeminy is a repeating pattern of one sinus beat followed by one PVC.
 
 Key Features:
+• Regularity: Regularly irregular (N-PVC-N-PVC pattern)
 • Pattern: Normal beat → PVC → Normal beat → PVC (repeating)
 • Every other beat is a PVC
 • PVCs are wide, bizarre, no preceding P wave
@@ -1468,6 +1564,7 @@ export const ventricularTrigeminy: Rhythm = {
   explanation: `Ventricular trigeminy is a repeating pattern of two sinus beats followed by one PVC.
 
 Key Features:
+• Regularity: Regularly irregular (N-N-PVC pattern)
 • Pattern: Normal → Normal → PVC → Normal → Normal → PVC (repeating)
 • Every third beat is a PVC
 • PVCs are wide, bizarre, no preceding P wave
@@ -1494,6 +1591,7 @@ export const ventricularCouplet: Rhythm = {
   explanation: `A ventricular couplet is two consecutive PVCs occurring in a row, followed by return to normal rhythm.
 
 Key Features:
+• Regularity: Regularly irregular (paired early beats)
 • Two wide QRS complexes in succession (back-to-back PVCs)
 • No P waves preceding the PVCs
 • Short coupling interval between the two PVCs
@@ -1528,6 +1626,7 @@ export const nsvt: Rhythm = {
   explanation: `Non-sustained ventricular tachycardia (NSVT) is a run of 3 or more consecutive ventricular beats at >100 bpm that terminates spontaneously within 30 seconds.
 
 Key Features:
+• Regularity: Regular (during VT run), then returns to baseline rhythm
 • ≥3 consecutive wide QRS complexes
 • Rate typically 100-250 bpm
 • Lasts <30 seconds by definition
@@ -1566,10 +1665,12 @@ export const lbbb: Rhythm = {
   waveform: 'lbbb',
   pacingIndication: false,
   premium: true,
+  leadLabel: 'V6',
   explanation: `WHAT IS IT
 Left Bundle Branch Block occurs when conduction through the left bundle branch is blocked. The right ventricle depolarizes first (via the right bundle), then the impulse spreads slowly across the septum to depolarize the left ventricle late.
 
 RECOGNIZE IT - "WiLLiaM" Pattern
+• Regularity: Regular (underlying sinus rhythm)
 • Wide QRS (≥120 ms or ≥3 small boxes)
 • Lead V1: Deep, wide S wave (W shape - down)
 • Leads I, aVL, V5-V6: Broad, notched R wave (M shape - up)
@@ -1609,10 +1710,12 @@ export const rbbb: Rhythm = {
   waveform: 'rbbb',
   pacingIndication: false,
   premium: true,
+  leadLabel: 'V1',
   explanation: `WHAT IS IT
 Right Bundle Branch Block occurs when conduction through the right bundle branch is blocked. The left ventricle depolarizes normally first, then the impulse spreads slowly to depolarize the right ventricle late, producing the characteristic RSR' pattern.
 
 RECOGNIZE IT - "MaRRoW" Pattern
+• Regularity: Regular (underlying sinus rhythm)
 • Wide QRS (≥120 ms or ≥3 small boxes)
 • Lead V1: RSR' pattern (M shape - "rabbit ears" or "M for Marrow")
 • Leads I, V6: Wide, slurred S wave (W shape)
@@ -1659,6 +1762,7 @@ export const pacedAAI: Rhythm = {
   explanation: `AAI pacing provides atrial pacing with atrial sensing, inhibited by sensed atrial activity.
 
 Key Features:
+• Regularity: Regular (paced rate)
 • Pacing spike before each P wave (atrial capture)
 • Normal narrow QRS (native conduction through AV node)
 • No ventricular pacing spike
@@ -1685,6 +1789,7 @@ export const pacedVVI: Rhythm = {
   explanation: `VVI pacing provides ventricular pacing with ventricular sensing, inhibited by sensed ventricular activity.
 
 Key Features:
+• Regularity: Regular (paced rate)
 • Pacing spike before each QRS complex
 • Wide QRS (paced from RV apex = LBBB morphology)
 • No atrial pacing or sensing
@@ -1713,6 +1818,7 @@ export const pacedDDD: Rhythm = {
   explanation: `DDD pacing provides dual chamber pacing and sensing with tracking capability.
 
 Key Features:
+• Regularity: Regular (paced rate)
 • Atrial pacing spike (if atrial pacing needed)
 • Programmed AV delay (mimics native PR interval)
 • Ventricular pacing spike after AV delay
@@ -1740,6 +1846,7 @@ export const failureToCaptureAtrial: Rhythm = {
   explanation: `Atrial failure to capture occurs when the atrial pacing spike fails to depolarize the atrium.
 
 Key Features:
+• Regularity: Regularly irregular (pacing spikes without capture)
 • Atrial pacing spike visible on ECG
 • NO P wave following the atrial spike
 • Ventricular pacing may still capture normally
@@ -1773,6 +1880,7 @@ export const failureToCaptureVentricular: Rhythm = {
   explanation: `Ventricular failure to capture occurs when the ventricular pacing spike fails to depolarize the ventricle.
 
 Key Features:
+• Regularity: Regularly irregular (pacing spikes without capture)
 • Ventricular pacing spike visible on ECG
 • NO QRS complex following the spike
 • Patient relies on underlying escape rhythm
@@ -1807,6 +1915,7 @@ export const undersensingAtrial: Rhythm = {
   explanation: `Atrial undersensing occurs when the atrial lead fails to detect native P waves and fires inappropriately.
 
 Key Features:
+• Regularity: Regularly irregular (competitive atrial pacing)
 • Atrial pacing spikes occurring on or near native P waves
 • Ventricular sensing intact - native QRS properly sensed
 • Atrial lead "doesn't see" native atrial activity
@@ -1840,6 +1949,7 @@ export const undersensingVentricular: Rhythm = {
   explanation: `Ventricular undersensing occurs when the ventricular lead fails to detect native QRS complexes and paces inappropriately.
 
 Key Features:
+• Regularity: Regularly irregular (competitive pacing)
 • Ventricular pacing spikes occurring during/after native QRS
 • Spikes may fall on T waves (dangerous - can trigger VT/VF)
 • Native QRS is present but device "doesn't see it"
@@ -1866,32 +1976,53 @@ export const oversensingAtrial: Rhythm = {
   id: 'oversensing-atrial',
   name: 'Atrial Oversensing',
   rate: 72,
-  description: 'Atrial lead senses non-P wave signals - inhibits appropriate atrial pacing',
+  description: 'Atrial lead senses non-P wave signals - causes underpacing, junctional escape, and loss of AV synchrony',
   waveform: 'oversensing_a',
   pacingIndication: false,
   premium: true,
-  explanation: `Atrial oversensing occurs when the atrial lead detects signals other than P waves (like far-field R waves, myopotentials, or EMI) and inhibits atrial pacing.
+  explanation: `WHAT IS IT
+Atrial oversensing occurs when the atrial lead detects signals other than P waves (like far-field R waves, myopotentials, or EMI) and INHIBITS atrial pacing inappropriately.
 
-Key Features:
-• Atrial pacing inhibited despite need for pacing
-• Device "sees" signals that aren't true P waves
-• May cause inappropriate tracking in DDD mode
-• Can result in pauses or loss of AV synchrony
+RECOGNIZE IT
+• Regularity: Regularly irregular (pauses from oversensing)
 
-CAUSES:
+WHAT YOU SEE ON ECG
+• Underpacing — atrial pacing inhibited when it should fire
+• Junctional escape rhythm — when atrial pacing stops, the junction takes over
+• Loss of AV synchrony — P waves and QRS become dissociated
+• Pauses — periods without atrial activity
+
+CONSEQUENCES
+┌────────────────────────────────────────────────────────────┐
+│  1. UNDERPACING                                            │
+│     - Atrial pacing inhibited → loss of atrial kick        │
+│     - Junctional escape rhythm at 40-60 bpm takes over     │
+│                                                           │
+│  2. INAPPROPRIATE MODE SWITCH                              │
+│     - Device thinks there's atrial tachycardia             │
+│     - Switches from DDD to VVI or DDI mode                 │
+│     - Loss of AV synchrony → symptoms                      │
+│                                                           │
+│  3. CAN TRIGGER ATRIAL ARRHYTHMIAS                        │
+│     - Inappropriate pacing patterns can be proarrhythmic   │
+│     - May trigger PACs or atrial tachycardia               │
+└────────────────────────────────────────────────────────────┘
+
+CAUSES
 • Atrial sensitivity programmed too high (number too low)
 • Far-field R wave sensing (ventricular signal seen by atrial lead)
 • Myopotentials (muscle artifacts)
 • Electromagnetic interference (EMI)
 • Lead fracture causing noise
 
-MANAGEMENT:
+MANAGEMENT
 • Decrease atrial sensitivity (raise the mV number)
 • Adjust PVAB (post-ventricular atrial blanking) if far-field R waves
+• Adjust mode switch parameters if inappropriate switching
 • Check for lead fracture/noise
 • Shield from EMI sources
 
-Clinical Pearl: Far-field R wave oversensing is common - the atrial lead sees the larger ventricular signal. PVAB programming can help by blanking the atrial channel during ventricular activity.`
+Clinical Pearl: Far-field R wave oversensing is common — the atrial lead sees the larger ventricular signal. PVAB programming blanks the atrial channel during ventricular activity to prevent this.`
 };
 
 // Ventricular Oversensing
@@ -1906,6 +2037,7 @@ export const oversensingVentricular: Rhythm = {
   explanation: `Ventricular oversensing occurs when the ventricular lead detects signals other than R waves (like T waves, myopotentials, or EMI) and inhibits ventricular pacing.
 
 Key Features:
+• Regularity: Regularly irregular (pauses from inhibited pacing)
 • Ventricular pacing inappropriately inhibited
 • Pauses in paced rhythm - no spikes when expected
 • Device "sees" signals that aren't true R waves

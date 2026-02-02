@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import RhythmStrip from '../components/RhythmStrip';
 import { Rhythm, rhythms, getQuizOptions, FREE_RHYTHM_IDS } from '../data/rhythms';
 
 type Mode = 'learn' | 'quiz' | 'analyze';
+type QuizQuestionType = 'identify' | 'regularity' | 'treatment' | 'pacing' | 'cause';
 
 // Analysis answers for each rhythm
 const rhythmAnalysis: Record<string, {
@@ -19,19 +20,19 @@ const rhythmAnalysis: Record<string, {
   'nsr': { rate: '60-100', regularity: 'Regular', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
   'sinus-tach': { rate: '>100', regularity: 'Regular', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
   'sinus-brady': { rate: '<60', regularity: 'Regular', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
-  'sinus-arrhythmia': { rate: '60-100', regularity: 'Irregular (varies with breathing)', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
+  'sinus-arrhythmia': { rate: '60-100', regularity: 'Regularly irregular (varies with breathing)', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
   'sinus-pause': { rate: 'Variable', regularity: 'Irregular (pause)', pWaves: 'Normal when present', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
   'sinus-arrest': { rate: 'Variable', regularity: 'Irregular (arrest = 2× P-P)', pWaves: 'Normal when present', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
-  'nsr-pac': { rate: '60-100', regularity: 'Irregular (early beats)', pWaves: 'Abnormal before PAC', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
-  'nsr-pvc': { rate: '60-100', regularity: 'Irregular (early beats)', pWaves: 'None before PVC', prInterval: 'None before PVC', qrsComplex: 'Wide (>0.12 sec) for PVC' },
-  'v-bigeminy': { rate: '60-100', regularity: 'Regular pattern (N-PVC-N-PVC)', pWaves: 'Present before normal beats', prInterval: 'Normal before sinus beats', qrsComplex: 'Alternating narrow/wide' },
-  'v-trigeminy': { rate: '60-100', regularity: 'Regular pattern (N-N-PVC)', pWaves: 'Present before normal beats', prInterval: 'Normal before sinus beats', qrsComplex: 'Every 3rd beat wide' },
+  'nsr-pac': { rate: '60-100', regularity: 'Regularly irregular (early beats)', pWaves: 'Abnormal before PAC', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
+  'nsr-pvc': { rate: '60-100', regularity: 'Regularly irregular (early beats)', pWaves: 'None before PVC', prInterval: 'None before PVC', qrsComplex: 'Wide (>0.12 sec) for PVC' },
+  'v-bigeminy': { rate: '60-100', regularity: 'Regularly irregular (N-PVC-N-PVC)', pWaves: 'Present before normal beats', prInterval: 'Normal before sinus beats', qrsComplex: 'Alternating narrow/wide' },
+  'v-trigeminy': { rate: '60-100', regularity: 'Regularly irregular (N-N-PVC)', pWaves: 'Present before normal beats', prInterval: 'Normal before sinus beats', qrsComplex: 'Every 3rd beat wide' },
   'first-degree': { rate: '60-100', regularity: 'Regular', pWaves: 'Normal, upright', prInterval: '>0.20 sec (prolonged)', qrsComplex: 'Narrow (<0.12 sec)' },
-  'mobitz1': { rate: '60-100', regularity: 'Irregular (grouped)', pWaves: 'More P than QRS', prInterval: 'Progressive lengthening', qrsComplex: 'Narrow (<0.12 sec)' },
-  'mobitz2': { rate: '60-100', regularity: 'Irregular (dropped)', pWaves: 'More P than QRS', prInterval: 'Constant', qrsComplex: 'Often wide' },
+  'mobitz1': { rate: '60-100', regularity: 'Regularly irregular (grouped beating)', pWaves: 'More P than QRS', prInterval: 'Progressive lengthening', qrsComplex: 'Narrow (<0.12 sec)' },
+  'mobitz2': { rate: '60-100', regularity: 'Regularly irregular (dropped beats)', pWaves: 'More P than QRS', prInterval: 'Constant', qrsComplex: 'Often wide' },
   'block-2to1': { rate: '~38 (half atrial rate)', regularity: 'Regular', pWaves: '2 P waves per QRS', prInterval: 'Constant in conducted beats', qrsComplex: 'Narrow or Wide (determines type)' },
   'chb': { rate: '30-40', regularity: 'Regular (P and QRS independent)', pWaves: 'Present, dissociated', prInterval: 'Variable (no relationship)', qrsComplex: 'Wide (escape rhythm)' },
-  'wap': { rate: '60-100', regularity: 'Irregular', pWaves: '3+ different morphologies', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
+  'wap': { rate: '60-100', regularity: 'Irregularly irregular', pWaves: '3+ different morphologies', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
   'mat': { rate: '>100', regularity: 'Irregularly irregular', pWaves: '3+ different morphologies', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
   'atrial-tach': { rate: '100-250', regularity: 'Regular', pWaves: 'Abnormal morphology', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
   'junctional': { rate: '40-60', regularity: 'Regular', pWaves: 'Absent or inverted', prInterval: 'Short or absent', qrsComplex: 'Narrow (<0.12 sec)' },
@@ -66,7 +67,223 @@ const rhythmAnalysis: Record<string, {
   'rbbb': { rate: '60-100', regularity: 'Regular', pWaves: 'Normal', prInterval: '0.12-0.20 sec', qrsComplex: 'Wide (>0.12 sec), MaRRoW' },
 };
 
-export default function RhythmReferencePage() {
+// Clinical quiz questions for each rhythm
+const clinicalQuizData: Record<string, {
+  regularity: { answer: string; distractors: string[] };
+  treatment: { question: string; answer: string; distractors: string[] };
+  pacing: { answer: string; explanation: string };
+  cause: { question: string; answer: string; distractors: string[] };
+  keyFeature: { question: string; answer: string; distractors: string[] };
+}> = {
+  'nsr': {
+    regularity: { answer: 'Regular', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'What is the treatment for NSR?', answer: 'No treatment needed (normal rhythm)', distractors: ['Cardioversion', 'Atropine', 'Defibrillation'] },
+    pacing: { answer: 'No', explanation: 'NSR is the normal baseline rhythm' },
+    cause: { question: 'NSR originates from:', answer: 'SA node', distractors: ['AV junction', 'Ventricles', 'Atrial ectopic focus'] },
+    keyFeature: { question: 'Key identifying feature of NSR:', answer: 'Upright P before each QRS, rate 60-100', distractors: ['No P waves visible', 'Wide QRS complexes', 'Irregular R-R intervals'] },
+  },
+  'sinus-brady': {
+    regularity: { answer: 'Regular', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'First-line treatment for symptomatic sinus bradycardia?', answer: 'Atropine 0.5 mg IV', distractors: ['Adenosine 6 mg IV', 'Amiodarone 150 mg IV', 'Synchronized cardioversion'] },
+    pacing: { answer: 'Yes (if symptomatic)', explanation: 'Pacing indicated for symptomatic bradycardia with documented symptom-rhythm correlation' },
+    cause: { question: 'Common cause of sinus bradycardia:', answer: 'Beta-blockers / Athletes / Sleep', distractors: ['Hyperthyroidism', 'Stimulant use', 'Pulmonary embolism'] },
+    keyFeature: { question: 'How to distinguish sinus brady from junctional?', answer: 'Sinus brady has upright P waves', distractors: ['Sinus brady has wide QRS', 'Sinus brady has inverted P waves', 'Sinus brady has no P waves'] },
+  },
+  'sinus-tach': {
+    regularity: { answer: 'Regular', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'Treatment for sinus tachycardia?', answer: 'Treat the underlying cause', distractors: ['Adenosine 6 mg IV', 'Synchronized cardioversion', 'Defibrillation'] },
+    pacing: { answer: 'No', explanation: 'Sinus tach is a response to something, not a primary arrhythmia' },
+    cause: { question: 'Which is NOT a cause of sinus tachycardia?', answer: 'Hypothermia', distractors: ['Fever', 'Pain', 'Hypovolemia'] },
+    keyFeature: { question: 'Key difference between sinus tach and SVT?', answer: 'Sinus tach has gradual onset/offset, visible P waves', distractors: ['Sinus tach has no P waves', 'Sinus tach starts/stops abruptly', 'Sinus tach has wide QRS'] },
+  },
+  'afib-slow': {
+    regularity: { answer: 'Irregularly irregular', distractors: ['Regular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'If AFib slow is due to rate-control meds, treatment is:', answer: 'Reduce/stop rate-control medications', distractors: ['Defibrillation', 'Increase beta-blocker dose', 'Atropine for rate control'] },
+    pacing: { answer: 'Yes (for tachy-brady syndrome)', explanation: 'Pacing allows safe rate control medication use' },
+    cause: { question: 'Common cause of slow AFib:', answer: 'AV nodal blocking medications', distractors: ['Hyperthyroidism', 'Stimulant abuse', 'Exercise'] },
+    keyFeature: { question: 'The hallmark of AFib is:', answer: 'Irregularly irregular R-R, no P waves', distractors: ['Regular R-R intervals', 'Sawtooth flutter waves', 'Wide QRS complexes'] },
+  },
+  'afib-rvr': {
+    regularity: { answer: 'Irregularly irregular', distractors: ['Regular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'First-line rate control for stable AFib RVR?', answer: 'IV diltiazem or metoprolol', distractors: ['Adenosine', 'Atropine', 'Lidocaine'] },
+    pacing: { answer: 'No', explanation: 'AFib RVR needs rate control, not pacing' },
+    cause: { question: 'Most common cause of AFib?', answer: 'Hypertension', distractors: ['Hypothyroidism', 'Hypothermia', 'Bradycardia'] },
+    keyFeature: { question: 'Key difference between AFib and MAT?', answer: 'MAT has visible P waves (3+ morphologies), AFib has none', distractors: ['AFib has regular R-R intervals', 'MAT has no P waves', 'AFib has sawtooth waves'] },
+  },
+  'vtach': {
+    regularity: { answer: 'Regular', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'Treatment for stable VT with pulse?', answer: 'Amiodarone 150 mg IV', distractors: ['Adenosine 6 mg IV', 'Atropine 0.5 mg IV', 'Observation only'] },
+    pacing: { answer: 'ICD indicated (not standard pacemaker)', explanation: 'ICDs can deliver ATP to terminate VT' },
+    cause: { question: 'Most common cause of VT?', answer: 'Prior MI / structural heart disease', distractors: ['Anxiety', 'Caffeine alone', 'Healthy heart'] },
+    keyFeature: { question: 'Key features suggesting VT over SVT with aberrancy:', answer: 'AV dissociation, fusion/capture beats', distractors: ['Narrow QRS', 'Rate < 100', 'Visible P waves before each QRS'] },
+  },
+  'vfib': {
+    regularity: { answer: 'Chaotic (no organized rhythm)', distractors: ['Regular', 'Regularly irregular', 'Irregularly irregular'] },
+    treatment: { question: 'First treatment for VFib?', answer: 'Defibrillate immediately', distractors: ['Atropine', 'Adenosine', 'Cardioversion'] },
+    pacing: { answer: 'No (cannot pace VFib)', explanation: 'Defibrillation is the only electrical treatment' },
+    cause: { question: 'Most common cause of VFib?', answer: 'Acute MI', distractors: ['Anxiety', 'Caffeine', 'Vagal tone'] },
+    keyFeature: { question: 'How to distinguish fine VFib from asystole?', answer: 'Fine VFib has chaotic undulations, confirm in 2 leads', distractors: ['Asystole has undulations', 'They are treated the same', 'Fine VFib is a flat line'] },
+  },
+  'torsades': {
+    regularity: { answer: 'Regular (polymorphic pattern)', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'First-line treatment for stable Torsades?', answer: 'IV Magnesium 2g push', distractors: ['Amiodarone (prolongs QT!)', 'Adenosine', 'Beta-blockers'] },
+    pacing: { answer: 'Yes (overdrive pacing at 90-110 bpm)', explanation: 'Faster rate shortens QT and suppresses Torsades' },
+    cause: { question: 'Torsades is associated with:', answer: 'Prolonged QT interval', distractors: ['Short PR interval', 'Normal QT interval', 'Delta waves'] },
+    keyFeature: { question: 'Key feature of Torsades morphology:', answer: 'QRS axis twists around baseline, waxing/waning', distractors: ['Consistent QRS shape', 'Sawtooth pattern', 'No QRS visible'] },
+  },
+  'chb': {
+    regularity: { answer: 'Regular P-P AND Regular R-R (but independent)', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'Treatment for unstable complete heart block?', answer: 'Transcutaneous pacing', distractors: ['Adenosine', 'Observation', 'Beta-blockers'] },
+    pacing: { answer: 'Yes (Class I absolute indication)', explanation: 'CHB requires permanent pacing even if asymptomatic' },
+    cause: { question: 'Common cause of CHB:', answer: 'Inferior or anterior MI', distractors: ['Caffeine', 'Anxiety', 'Exercise'] },
+    keyFeature: { question: 'Key finding in complete heart block:', answer: 'P waves and QRS have NO relationship', distractors: ['Every P wave conducts', 'No P waves visible', 'Regular PR intervals'] },
+  },
+  'mobitz1': {
+    regularity: { answer: 'Regularly irregular (grouped beating)', distractors: ['Regular', 'Irregularly irregular', 'Chaotic'] },
+    treatment: { question: 'Mobitz I typically requires:', answer: 'Observation (usually benign)', distractors: ['Emergent pacing', 'Defibrillation', 'Cardioversion'] },
+    pacing: { answer: 'Rarely indicated', explanation: 'Mobitz I is AV nodal disease and usually benign' },
+    cause: { question: 'Classic cause of Mobitz I:', answer: 'Increased vagal tone / inferior MI', distractors: ['Anterior MI', 'Hyperthyroidism', 'Stimulant use'] },
+    keyFeature: { question: 'Hallmark of Mobitz I (Wenckebach)?', answer: 'PR gets longer until QRS drops', distractors: ['Constant PR with dropped beats', 'No P waves', 'Wide QRS'] },
+  },
+  'mobitz2': {
+    regularity: { answer: 'Regularly irregular (dropped beats)', distractors: ['Regular', 'Irregularly irregular', 'Chaotic'] },
+    treatment: { question: 'Treatment approach for Mobitz II?', answer: 'Transcutaneous pacing standby, plan for permanent pacer', distractors: ['Observation only', 'Adenosine', 'Cardioversion'] },
+    pacing: { answer: 'Yes (Class I absolute indication)', explanation: 'High risk of progression to complete heart block' },
+    cause: { question: 'Mobitz II is usually due to:', answer: 'Infranodal (His-Purkinje) disease', distractors: ['AV nodal disease', 'SA node disease', 'Atrial disease'] },
+    keyFeature: { question: 'Key difference between Mobitz I and II?', answer: 'Mobitz II has constant PR before drop', distractors: ['Mobitz II has lengthening PR', 'Mobitz I has constant PR', 'Mobitz II has no P waves'] },
+  },
+  'junctional': {
+    regularity: { answer: 'Regular', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'Treatment for symptomatic junctional escape?', answer: 'Atropine, then transcutaneous pacing', distractors: ['Adenosine', 'Cardioversion', 'Amiodarone'] },
+    pacing: { answer: 'Yes (if symptomatic)', explanation: 'Junctional escape means SA node failed' },
+    cause: { question: 'Junctional escape rhythm indicates:', answer: 'SA node failure', distractors: ['Ventricular irritability', 'Atrial fibrillation', 'Normal conduction'] },
+    keyFeature: { question: 'Key feature of junctional rhythm:', answer: 'No upright P waves, narrow QRS, rate 40-60', distractors: ['Upright P waves present', 'Wide QRS', 'Rate > 100'] },
+  },
+  'svt': {
+    regularity: { answer: 'Regular', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'First-line treatment for stable SVT?', answer: 'Vagal maneuvers, then adenosine', distractors: ['Defibrillation', 'Atropine', 'Amiodarone'] },
+    pacing: { answer: 'No', explanation: 'SVT is treated with vagal maneuvers, adenosine, or ablation' },
+    cause: { question: 'Most common mechanism of SVT?', answer: 'AVNRT (reentry in AV node)', distractors: ['Ventricular focus', 'SA node disease', 'Complete heart block'] },
+    keyFeature: { question: 'Key feature distinguishing SVT from sinus tach?', answer: 'SVT has abrupt onset/offset', distractors: ['SVT has gradual onset', 'SVT has visible P waves', 'SVT rate is < 100'] },
+  },
+  'wap': {
+    regularity: { answer: 'Irregularly irregular', distractors: ['Regular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'Treatment for WAP?', answer: 'None needed (benign)', distractors: ['Cardioversion', 'Pacemaker', 'Ablation'] },
+    pacing: { answer: 'No', explanation: 'WAP is benign' },
+    cause: { question: 'WAP is commonly seen in:', answer: 'Healthy individuals / athletes', distractors: ['Acute MI', 'Cardiac arrest', 'Heart failure'] },
+    keyFeature: { question: 'Key feature of WAP:', answer: '3+ different P wave morphologies, rate < 100', distractors: ['No P waves', 'Rate > 100', 'Wide QRS'] },
+  },
+  'mat': {
+    regularity: { answer: 'Irregularly irregular', distractors: ['Regular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'Primary treatment for MAT?', answer: 'Treat underlying COPD/lung disease', distractors: ['Cardioversion', 'Defibrillation', 'Pacemaker'] },
+    pacing: { answer: 'No', explanation: 'Treat the lungs, not the rhythm' },
+    cause: { question: 'MAT is classically associated with:', answer: 'COPD / severe lung disease', distractors: ['Healthy heart', 'Caffeine alone', 'Sleep'] },
+    keyFeature: { question: 'Key difference between MAT and AFib?', answer: 'MAT has visible P waves (3+ shapes), AFib has none', distractors: ['MAT has no P waves', 'AFib has regular R-R', 'MAT is regular'] },
+  },
+  'asystole': {
+    regularity: { answer: 'Absent (no rhythm)', distractors: ['Regular', 'Irregularly irregular', 'Chaotic'] },
+    treatment: { question: 'Is asystole a shockable rhythm?', answer: 'No - give CPR and epinephrine', distractors: ['Yes - defibrillate', 'Yes - cardiovert', 'Yes - shock at 200J'] },
+    pacing: { answer: 'Rarely effective', explanation: 'Focus on CPR and reversible causes' },
+    cause: { question: 'Asystole often represents:', answer: 'End-stage cardiac arrest', distractors: ['Healthy heart', 'Normal variant', 'Benign finding'] },
+    keyFeature: { question: 'Key step when seeing flat line:', answer: 'Confirm in 2 leads, check patient', distractors: ['Immediately defibrillate', 'Give adenosine', 'Observe for 5 minutes'] },
+  },
+  'ivr': {
+    regularity: { answer: 'Regular', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'Treatment for IVR (20-40 bpm)?', answer: 'Emergent pacing - do NOT suppress', distractors: ['Lidocaine (suppresses escape)', 'Observation only', 'Cardioversion'] },
+    pacing: { answer: 'Yes (Class I absolute indication)', explanation: 'All higher pacemakers have failed' },
+    cause: { question: 'IVR indicates:', answer: 'SA node AND junction failure', distractors: ['Normal heart', 'Caffeine effect', 'Athletic training'] },
+    keyFeature: { question: 'Key feature of IVR:', answer: 'Wide QRS, no P waves, rate 20-40', distractors: ['Narrow QRS', 'Rate > 100', 'Upright P waves'] },
+  },
+  'aivr': {
+    regularity: { answer: 'Regular', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'Treatment for AIVR post-MI?', answer: 'Usually none - often a good sign of reperfusion', distractors: ['Lidocaine', 'Cardioversion', 'Emergent pacing'] },
+    pacing: { answer: 'No', explanation: 'AIVR is usually benign and self-limiting' },
+    cause: { question: 'AIVR is classically seen after:', answer: 'Successful coronary reperfusion', distractors: ['Cardiac arrest', 'Heart failure', 'Severe hypoxia'] },
+    keyFeature: { question: 'Key difference between AIVR and IVR:', answer: 'AIVR is 40-100 bpm (benign), IVR is 20-40 (needs pacing)', distractors: ['Same rate range', 'AIVR has narrow QRS', 'IVR is faster'] },
+  },
+  'lbbb': {
+    regularity: { answer: 'Regular', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'NEW LBBB with chest pain is treated as:', answer: 'STEMI equivalent - activate cath lab', distractors: ['Normal finding', 'Give aspirin only', 'Observe overnight'] },
+    pacing: { answer: 'CRT may be indicated if EF reduced', explanation: 'LBBB with reduced EF may benefit from CRT' },
+    cause: { question: 'LBBB is associated with:', answer: 'Structural heart disease (ischemic, HTN, cardiomyopathy)', distractors: ['Normal variant in young', 'Caffeine', 'Athletic heart'] },
+    keyFeature: { question: 'Memory trick for LBBB:', answer: 'WiLLiaM - W in V1, M in lateral leads', distractors: ['MaRRoW', 'RSR\' in V1', 'Rabbit ears in V1'] },
+  },
+  'rbbb': {
+    regularity: { answer: 'Regular', distractors: ['Irregularly irregular', 'Regularly irregular', 'Chaotic'] },
+    treatment: { question: 'Isolated RBBB typically requires:', answer: 'Often no treatment (can be normal variant)', distractors: ['Emergent pacing', 'Cardioversion', 'Ablation'] },
+    pacing: { answer: 'Rarely needed alone', explanation: 'RBBB alone is often benign' },
+    cause: { question: 'NEW RBBB with dyspnea suggests:', answer: 'Pulmonary embolism', distractors: ['Normal finding', 'Caffeine effect', 'Athletic heart'] },
+    keyFeature: { question: 'Memory trick for RBBB:', answer: 'MaRRoW - M (RSR\') in V1, W in lateral leads', distractors: ['WiLLiaM', 'W in V1', 'No delta wave'] },
+  },
+};
+
+// Get quiz question and options for a specific question type
+function getQuizQuestion(rhythmId: string, questionType: QuizQuestionType, rhythmName: string): { question: string; correctAnswer: string; options: string[] } {
+  const data = clinicalQuizData[rhythmId];
+
+  if (!data) {
+    // Fallback for rhythms without clinical data
+    return {
+      question: 'What rhythm is this?',
+      correctAnswer: rhythmName,
+      options: getQuizOptions(rhythmName),
+    };
+  }
+
+  switch (questionType) {
+    case 'identify':
+      return {
+        question: 'What rhythm is this?',
+        correctAnswer: rhythmName,
+        options: getQuizOptions(rhythmName),
+      };
+    case 'regularity':
+      const regOptions = [data.regularity.answer, ...data.regularity.distractors];
+      return {
+        question: `What is the regularity of ${rhythmName}?`,
+        correctAnswer: data.regularity.answer,
+        options: shuffleArray(regOptions),
+      };
+    case 'treatment':
+      const txOptions = [data.treatment.answer, ...data.treatment.distractors];
+      return {
+        question: data.treatment.question,
+        correctAnswer: data.treatment.answer,
+        options: shuffleArray(txOptions),
+      };
+    case 'pacing':
+      return {
+        question: `Is pacing indicated for ${rhythmName}?`,
+        correctAnswer: data.pacing.answer,
+        options: shuffleArray(['Yes (Class I indication)', 'Yes (if symptomatic)', 'No', 'ICD indicated (not standard pacemaker)']),
+      };
+    case 'cause':
+      const causeOptions = [data.cause.answer, ...data.cause.distractors];
+      return {
+        question: data.cause.question,
+        correctAnswer: data.cause.answer,
+        options: shuffleArray(causeOptions),
+      };
+    default:
+      return {
+        question: 'What rhythm is this?',
+        correctAnswer: rhythmName,
+        options: getQuizOptions(rhythmName),
+      };
+  }
+}
+
+// Shuffle array helper
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
+function RhythmReferenceContent() {
   const searchParams = useSearchParams();
   const [mode, setMode] = useState<Mode>('learn');
   const [selectedRhythm, setSelectedRhythm] = useState<Rhythm>(rhythms[0]);
@@ -85,6 +302,7 @@ export default function RhythmReferencePage() {
       const rhythm = rhythms.find(r => r.id === rhythmId);
       if (rhythm) {
         setSelectedRhythm(rhythm);
+        // Note: Quiz question will be updated by the main quiz state initialization
         setQuizOptions(getQuizOptions(rhythm.name));
       }
     }
@@ -111,6 +329,10 @@ export default function RhythmReferencePage() {
   const isRhythmLocked = (rhythm: Rhythm) => !isPro && rhythm.premium;
 
   // Quiz state
+  const [quizQuestionType, setQuizQuestionType] = useState<QuizQuestionType>('identify');
+  const [quizQuestion, setQuizQuestion] = useState<{ question: string; correctAnswer: string; options: string[] }>(() =>
+    getQuizQuestion(rhythms[0].id, 'identify', rhythms[0].name)
+  );
   const [quizOptions, setQuizOptions] = useState<string[]>(() => getQuizOptions(rhythms[0].name));
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -145,7 +367,9 @@ export default function RhythmReferencePage() {
           const nextRhythm = rhythms[nextIdx];
           if (isPro || !nextRhythm.premium) {
             setSelectedRhythm(nextRhythm);
-            setQuizOptions(getQuizOptions(nextRhythm.name));
+            const newQ = getQuizQuestion(nextRhythm.id, quizQuestionType, nextRhythm.name);
+            setQuizQuestion(newQ);
+            setQuizOptions(newQ.options);
             setSelectedAnswer(null);
             setShowFeedback(false);
             setIsCorrect(false);
@@ -162,7 +386,9 @@ export default function RhythmReferencePage() {
           const prevRhythm = rhythms[prevIdx];
           if (isPro || !prevRhythm.premium) {
             setSelectedRhythm(prevRhythm);
-            setQuizOptions(getQuizOptions(prevRhythm.name));
+            const newQ = getQuizQuestion(prevRhythm.id, quizQuestionType, prevRhythm.name);
+            setQuizQuestion(newQ);
+            setQuizOptions(newQ.options);
             setSelectedAnswer(null);
             setShowFeedback(false);
             setIsCorrect(false);
@@ -180,7 +406,7 @@ export default function RhythmReferencePage() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedRhythm, isPro]);
+  }, [selectedRhythm, isPro, quizQuestionType]);
 
   // Categories for dropdown grouping
   const categories = useMemo(() => {
@@ -224,7 +450,9 @@ export default function RhythmReferencePage() {
         return;
       }
       setSelectedRhythm(rhythm);
-      setQuizOptions(getQuizOptions(rhythm.name));
+      const newQ = getQuizQuestion(rhythm.id, quizQuestionType, rhythm.name);
+      setQuizQuestion(newQ);
+      setQuizOptions(newQ.options);
       setSelectedAnswer(null);
       setShowFeedback(false);
       setIsCorrect(false);
@@ -238,7 +466,7 @@ export default function RhythmReferencePage() {
   const handleAnswerSelect = (answer: string) => {
     if (showFeedback) return;
     setSelectedAnswer(answer);
-    const correct = answer === selectedRhythm.name;
+    const correct = answer === quizQuestion.correctAnswer;
     setIsCorrect(correct);
     setShowFeedback(true);
   };
@@ -252,7 +480,9 @@ export default function RhythmReferencePage() {
     }
     const randomRhythm = accessibleRhythms[Math.floor(Math.random() * accessibleRhythms.length)];
     setSelectedRhythm(randomRhythm);
-    setQuizOptions(getQuizOptions(randomRhythm.name));
+    const newQuestion = getQuizQuestion(randomRhythm.id, quizQuestionType, randomRhythm.name);
+    setQuizQuestion(newQuestion);
+    setQuizOptions(newQuestion.options);
     setSelectedAnswer(null);
     setShowFeedback(false);
     setIsCorrect(false);
@@ -262,12 +492,24 @@ export default function RhythmReferencePage() {
   };
 
   const handleTryAgain = () => {
-    setQuizOptions(getQuizOptions(selectedRhythm.name));
+    const newQuestion = getQuizQuestion(selectedRhythm.id, quizQuestionType, selectedRhythm.name);
+    setQuizQuestion(newQuestion);
+    setQuizOptions(newQuestion.options);
     setSelectedAnswer(null);
     setShowFeedback(false);
     setIsCorrect(false);
     setAnalysisAnswers({ rhythm: '', rate: '', regularity: '', pWaves: '', prInterval: '', qrsComplex: '' });
     setShowAnalysisFeedback(false);
+  };
+
+  const handleQuestionTypeChange = (newType: QuizQuestionType) => {
+    setQuizQuestionType(newType);
+    const newQuestion = getQuizQuestion(selectedRhythm.id, newType, selectedRhythm.name);
+    setQuizQuestion(newQuestion);
+    setQuizOptions(newQuestion.options);
+    setSelectedAnswer(null);
+    setShowFeedback(false);
+    setIsCorrect(false);
   };
 
   const handleSubmitAnalysis = () => {
@@ -393,7 +635,7 @@ export default function RhythmReferencePage() {
         {(mode === 'quiz' || mode === 'analyze') && !showFeedback && !showAnalysisFeedback && (
           <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-xl p-6 mb-6 text-center">
             <h2 className="text-2xl font-bold text-emerald-400">
-              {mode === 'quiz' ? 'What rhythm is this?' : 'Analyze this rhythm'}
+              {mode === 'quiz' ? quizQuestion.question : 'Analyze this rhythm'}
             </h2>
             <p className="text-emerald-300/70 mt-1">
               {mode === 'quiz' ? 'Select your answer below' : 'Fill in the analysis below'}
@@ -414,6 +656,7 @@ export default function RhythmReferencePage() {
               width={800}
               isRunning={isRunning}
               caliperMode={caliperMode}
+              leadLabel={selectedRhythm.leadLabel}
             />
           </div>
           <div className="flex justify-center gap-3 mt-3">
@@ -471,16 +714,43 @@ export default function RhythmReferencePage() {
         {/* Quiz Mode - Multiple Choice */}
         {mode === 'quiz' && (
           <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 mb-6">
+            {/* Question Type Selector */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-slate-400 mb-2">Question Type:</label>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { type: 'identify' as QuizQuestionType, label: 'Identify' },
+                  { type: 'regularity' as QuizQuestionType, label: 'Regularity' },
+                  { type: 'treatment' as QuizQuestionType, label: 'Treatment' },
+                  { type: 'pacing' as QuizQuestionType, label: 'Pacing' },
+                  { type: 'cause' as QuizQuestionType, label: 'Cause' },
+                ].map(({ type, label }) => (
+                  <button
+                    key={type}
+                    onClick={() => handleQuestionTypeChange(type)}
+                    disabled={showFeedback}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                      quizQuestionType === type
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    } ${showFeedback ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <h3 className="text-lg font-semibold text-white mb-4">Select your answer:</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-              {quizOptions.map((option, index) => {
+              {quizQuestion.options.map((option, index) => {
                 const letter = String.fromCharCode(65 + index);
                 let buttonClass = 'w-full p-4 text-left rounded-lg border-2 transition font-medium ';
                 if (!showFeedback) {
                   buttonClass += selectedAnswer === option
                     ? 'border-emerald-500 bg-emerald-500/20 text-emerald-300'
                     : 'border-slate-600 bg-slate-700 hover:border-emerald-500/50 hover:bg-slate-600 text-slate-200';
-                } else if (option === selectedRhythm.name) {
+                } else if (option === quizQuestion.correctAnswer) {
                   buttonClass += 'border-emerald-500 bg-emerald-500/20 text-emerald-300';
                 } else if (selectedAnswer === option && !isCorrect) {
                   buttonClass += 'border-red-500 bg-red-500/20 text-red-300';
@@ -491,8 +761,8 @@ export default function RhythmReferencePage() {
                   <button key={option} onClick={() => handleAnswerSelect(option)} disabled={showFeedback} className={buttonClass}>
                     <span className="flex items-center justify-between">
                       <span><strong className="mr-2">{letter}.</strong>{option}</span>
-                      {showFeedback && option === selectedRhythm.name && <span className="text-emerald-400 font-bold">✓</span>}
-                      {showFeedback && selectedAnswer === option && option !== selectedRhythm.name && <span className="text-red-400 font-bold">✗</span>}
+                      {showFeedback && option === quizQuestion.correctAnswer && <span className="text-emerald-400 font-bold">✓</span>}
+                      {showFeedback && selectedAnswer === option && option !== quizQuestion.correctAnswer && <span className="text-red-400 font-bold">✗</span>}
                     </span>
                   </button>
                 );
@@ -698,7 +968,25 @@ export default function RhythmReferencePage() {
 
       </main>
 
-      <footer className="bg-slate-950 border-t border-slate-800 py-6 mt-12">
+      {/* Disclaimer */}
+      <div className="bg-slate-900/80 border-t border-slate-800 py-6 mt-12">
+        <div className="max-w-4xl mx-auto px-4">
+          <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <p className="text-slate-400 text-xs leading-relaxed">
+                <span className="text-amber-400 font-semibold">Educational Use Only:</span> Live ECG Vault is for educational and practice purposes only. It does not provide medical advice or replace professional training. Always follow clinical protocols and consult qualified professionals for patient care.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer className="bg-slate-950 border-t border-slate-800 py-6">
         <div className="max-w-5xl mx-auto px-4 text-center text-slate-500 text-sm">
           <p>&copy; 2025 Mr Pacemaker LLC</p>
         </div>
@@ -741,5 +1029,18 @@ export default function RhythmReferencePage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Wrap in Suspense for useSearchParams
+export default function RhythmReferencePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </div>
+    }>
+      <RhythmReferenceContent />
+    </Suspense>
   );
 }

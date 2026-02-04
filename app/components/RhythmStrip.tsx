@@ -13,6 +13,7 @@ interface RhythmStripProps {
   width?: number; // canvas width in pixels
   isRunning?: boolean;
   caliperMode?: boolean;
+  leadLabel?: string; // Lead label to display (default: "Lead II")
 }
 
 // Colors matching standard ECG paper
@@ -31,6 +32,7 @@ export default function RhythmStrip({
   width = 800,
   isRunning = true,
   caliperMode = false,
+  leadLabel = 'Lead II',
 }: RhythmStripProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gridCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -474,50 +476,35 @@ export default function RhythmStrip({
       ctx.stroke();
     } else if (waveformType === 'torsades') {
       // Torsades de Pointes - "twisting of the points"
-      // Pointed oscillations with waxing/waning spindle envelope
+      // Continuous smooth waxing/waning pattern - no sharp transitions
 
-      // ~265 bpm for 1.5 large boxes (7.5mm) per oscillation at 25mm/sec
-      const torsadesRate = 265;
+      const torsadesRate = 240; // 240 bpm = 4 beats per second
       const beatInterval = ((60 / torsadesRate) * speed) * pixelsPerMm;
 
-      // Amplitude cycle: 10 beats to max, 10 beats back to min
+      // Twist cycle: ~10 beats from max positive to max negative
       const twistCycleBeats = 10;
       const twistPeriod = beatInterval * twistCycleBeats * 2;
 
       const rapidFreq = (2 * Math.PI) / beatInterval;
       const twistFreq = (2 * Math.PI) / twistPeriod;
 
-      // Round offset to whole pixels to prevent jitter
       const smoothOffset = Math.round(offset);
-
-      // Shifted baseline - move waveform up slightly
-      const torsadesBaseline = baselineY - pixelsPerMm * 3;
 
       ctx.beginPath();
 
-      // Draw at whole pixel increments for stability
       for (let x = 0; x < width; x += 1) {
         const pos = x + smoothOffset;
 
-        // Fusiform envelope - creates the characteristic spindle/bowtie shape
-        const twistPhase = pos * twistFreq;
-        const envelope = Math.sin(twistPhase);
+        // Envelope controls both amplitude AND polarity smoothly (no sudden flip)
+        const envelope = Math.sin(pos * twistFreq);
 
-        // Amplitude modulation: minimum ~15% at twist point, maximum 100%
-        const amplitudeMod = 0.15 + Math.pow(Math.abs(envelope), 0.5) * 0.85;
+        // Rapid oscillation
+        const wave = Math.sin(pos * rapidFreq);
 
-        // Triangle wave with soft rounded corners
-        const rapidPhase = pos * rapidFreq;
-        const triangleWave = Math.asin(Math.sin(rapidPhase)) / (Math.PI / 2);
-        const sineWave = Math.sin(rapidPhase);
-        // Blend: 75% triangle, 25% sine for softer corners
-        const blendedWave = triangleWave * 0.75 + sineWave * 0.25;
-
-        // Polarity inversion at envelope zero-crossings creates the "twist"
-        const polarity = envelope >= 0 ? 1 : -1;
-
-        const waveValue = blendedWave * amplitudeMod * polarity;
-        const y = torsadesBaseline - waveValue * amplitudeScale * 0.80;
+        // Multiply directly - envelope smoothly transitions through zero
+        // This creates continuous twist without sharp W/M points
+        const waveValue = wave * envelope;
+        const y = baselineY - waveValue * amplitudeScale * 0.75;
 
         if (x === 0) {
           ctx.moveTo(x, y);
@@ -568,21 +555,20 @@ export default function RhythmStrip({
       const sDepth = amplitudeScale * 0.3;
       const tHeight = amplitudeScale * 0.25;
 
-      // Start from left edge
-      let currentX = -20;
-      ctx.moveTo(currentX, baselineY);
+      // Start from left edge at baseline
+      let currentX = 0;
+      ctx.moveTo(0, baselineY);
 
       for (const event of events) {
-        if (event.x < currentX - 5) continue;
+        // Skip events that are behind our current position
+        if (event.x < currentX) continue;
 
-        // Draw baseline to this event
-        if (event.x > currentX) {
-          ctx.lineTo(event.x, baselineY);
-          currentX = event.x;
-        }
+        // Draw baseline to this event (ensure smooth connection)
+        ctx.lineTo(event.x, baselineY);
+        currentX = event.x;
 
         if (event.type === 'P') {
-          // P waves march independently - show them unless directly under QRS peak
+          // P waves march independently - show them unless directly under QRS
           const qrsOverlap = events.find(e =>
             e.type === 'QRS' &&
             event.x > e.x + qrsWidth * 0.2 &&
@@ -590,55 +576,22 @@ export default function RhythmStrip({
           );
 
           if (!qrsOverlap) {
-            // Draw P wave - visible marching through showing AV dissociation
-            for (let t = 0; t <= 1; t += 0.1) {
+            // Draw smooth P wave
+            for (let t = 0; t <= 1; t += 0.05) {
               ctx.lineTo(event.x + t * pWaveWidth, baselineY - pHeight * Math.sin(t * Math.PI));
             }
-            // Explicit return to baseline after P wave
             currentX = event.x + pWaveWidth;
             ctx.lineTo(currentX, baselineY);
           }
         } else {
-          // VENTRICULAR ESCAPE QRS - Wide, slurred morphology
+          // VENTRICULAR ESCAPE QRS - Use drawVentricularComplex for continuous R to T wave
+          // (same morphology as idioventricular rhythm)
           const x = event.x;
-
-          // Start from baseline
           ctx.lineTo(x, baselineY);
 
-          // Slow slurred upstroke (ventricular origin)
-          ctx.lineTo(x + qrsWidth * 0.08, baselineY + amplitudeScale * 0.05);
-          ctx.lineTo(x + qrsWidth * 0.15, baselineY - amplitudeScale * 0.2);
-          ctx.lineTo(x + qrsWidth * 0.25, baselineY - amplitudeScale * 0.45);
-
-          // Broad R wave peak
-          ctx.lineTo(x + qrsWidth * 0.35, baselineY - rHeight * 0.85);
-          ctx.lineTo(x + qrsWidth * 0.45, baselineY - rHeight);
-          ctx.lineTo(x + qrsWidth * 0.55, baselineY - rHeight * 0.85);
-
-          // Slow downstroke
-          ctx.lineTo(x + qrsWidth * 0.65, baselineY - amplitudeScale * 0.3);
-          ctx.lineTo(x + qrsWidth * 0.75, baselineY + sDepth * 0.5);
-
-          // S wave returns to baseline
-          ctx.lineTo(x + qrsWidth * 0.85, baselineY + sDepth);
-          ctx.lineTo(x + qrsWidth * 0.95, baselineY + sDepth * 0.2);
-          ctx.lineTo(x + qrsWidth, baselineY);
-
-          // ST segment - flat on baseline
-          const stEnd = x + qrsWidth + stLength;
-          ctx.lineTo(stEnd, baselineY);
-
-          // Discordant T wave (inverted — opposite to upright QRS, ventricular origin)
-          for (let t = 0; t <= 1; t += 0.08) {
-            const tShape = t < 0.4
-              ? Math.sin(t / 0.4 * Math.PI / 2)
-              : Math.cos((t - 0.4) / 0.6 * Math.PI / 2);
-            ctx.lineTo(stEnd + t * tWidth, baselineY + tHeight * tShape);
-          }
-          // Explicit return to baseline after T wave
-          const tEnd = stEnd + tWidth;
-          ctx.lineTo(tEnd, baselineY);
-          currentX = tEnd;
+          // Draw continuous R-T ventricular complex (like IVR/AIVR)
+          const complexEnd = drawVentricularComplex(ctx, x);
+          currentX = complexEnd;
         }
       }
 
@@ -808,9 +761,10 @@ export default function RhythmStrip({
       ctx.stroke();
     } else if (waveformType === 'sinus_pause') {
       // Sinus pause: Normal sinus rhythm, then SA node fails to fire (missing P wave)
-      // Pattern: 2 normal beats, then pause (2.5 intervals), then normal beat resumes
-      // Total pattern = 5.5 intervals (2 normal + 2.5 pause + 1 normal)
-      const patternLength = ventricularIntervalPx * 5.5;
+      // Pattern: 2 normal beats, then pause (3.75 intervals = ~16 bpm), then normal beat resumes
+      // Total pattern = 6.75 intervals (2 normal + 3.75 pause + 1 normal)
+      const pauseIntervals = 3.75; // Makes pause R-R ~16 bpm at 60 bpm underlying rate
+      const patternLength = ventricularIntervalPx * (3 + pauseIntervals);
       const startPattern = Math.floor(offset / patternLength) - 1;
       const numPatterns = Math.ceil(width / patternLength) + 3;
 
@@ -833,8 +787,8 @@ export default function RhythmStrip({
         drawSinusComplex(ctx, beat2Start, beat2End, false, false, true);
 
         // SINUS PAUSE - SA node fails to fire, just flat isoelectric baseline
-        // This represents ~2.5 intervals where P waves should have appeared but didn't
-        const pauseEnd = beat2End + ventricularIntervalPx * 2.5;
+        // This represents ~3.75 intervals (~16 bpm) where P waves should have appeared but didn't
+        const pauseEnd = beat2End + ventricularIntervalPx * pauseIntervals;
         ctx.lineTo(pauseEnd, baselineY);
 
         // Beat 3 - normal sinus resumes (full interval, same morphology as before)
@@ -844,10 +798,10 @@ export default function RhythmStrip({
 
       ctx.stroke();
     } else if (waveformType === 'sinus_arrest') {
-      // Sinus ARREST: Pause IS exactly 2× P-P interval (SA node missed 2 complete cycles)
-      // Pattern: 2 normal beats, then pause (exactly 2.0 intervals), then normal beat resumes
-      // Total pattern = 5.0 intervals (2 normal + 2.0 arrest + 1 normal)
-      const patternLength = ventricularIntervalPx * 5.0;
+      // Sinus ARREST: SA node fails, shows 60 bpm normal then drops to 19 bpm during arrest
+      // 19 bpm = 60/19 = ~3.16 intervals
+      const arrestIntervals = 3.16; // 60 bpm → 19 bpm during arrest
+      const patternLength = ventricularIntervalPx * (3 + arrestIntervals);
       const startPattern = Math.floor(offset / patternLength) - 1;
       const numPatterns = Math.ceil(width / patternLength) + 3;
 
@@ -865,9 +819,8 @@ export default function RhythmStrip({
         const beat2End = beat1End + ventricularIntervalPx;
         drawSinusComplex(ctx, beat1End, beat2End, false, false, true);
 
-        // SINUS ARREST - exactly 2× P-P interval (SA node missed 2 complete cycles)
-        // This is the KEY difference from pause - pause is NOT a multiple of P-P
-        const arrestEnd = beat2End + ventricularIntervalPx * 2.0;
+        // SINUS ARREST - ~3.16 intervals (~19 bpm) where SA node failed
+        const arrestEnd = beat2End + ventricularIntervalPx * arrestIntervals;
         ctx.lineTo(arrestEnd, baselineY);
 
         // Beat 3 - normal sinus resumes
@@ -1467,7 +1420,8 @@ export default function RhythmStrip({
 
       ctx.stroke();
     } else if (waveformType === 'atrial_tach') {
-      // Atrial Tachycardia - fast, regular, abnormal P waves visible
+      // Atrial Tachycardia - fast, regular, abnormal P waves with NORMAL PR interval (120-200ms)
+      // Key distinction from junctional: PR interval >= 120ms
       const startBeat = Math.floor(offset / ventricularIntervalPx) - 1;
       const numBeatsVisible = Math.ceil(width / ventricularIntervalPx) + 3;
 
@@ -1478,32 +1432,42 @@ export default function RhythmStrip({
         const beat = startBeat + i;
         const beatStart = beat * ventricularIntervalPx - offset;
         const beatEnd = (beat + 1) * ventricularIntervalPx - offset;
-        const totalWidth = beatEnd - beatStart;
 
-        // Abnormal P wave (slightly different morphology, but not too pointy)
-        const pStart = beatStart + totalWidth * 0.05;
+        // At 150 bpm, beat interval is 400ms
+        // P wave starts early, PR interval ~140ms (normal-ish for fast rate)
+        // P wave: 0-80ms, PR segment: 80-140ms, QRS starts at 140ms
+
+        // Abnormal P wave (peaked/pointed - ectopic atrial focus)
+        const pStart = beatStart + pixelsPerMm * 0.5; // Start ~20ms in
         ctx.lineTo(pStart, baselineY);
-        const pHeight = amplitudeScale * 0.15;
-        const pWidth = pixelsPerMm * 2.5;
-        for (let t = 0; t <= 1; t += 0.1) {
-          ctx.lineTo(pStart + t * pWidth, baselineY - pHeight * Math.sin(t * Math.PI));
+        const pHeight = amplitudeScale * 0.18; // Slightly taller, peaked P
+        const pWidth = pixelsPerMm * 2; // ~80ms P wave duration
+        for (let t = 0; t <= 1; t += 0.08) {
+          // More peaked P wave shape (ectopic)
+          const pShape = Math.sin(t * Math.PI) * (1 - 0.3 * Math.abs(t - 0.5));
+          ctx.lineTo(pStart + t * pWidth, baselineY - pHeight * pShape);
         }
         ctx.lineTo(pStart + pWidth, baselineY);
 
-        // PR segment
-        ctx.lineTo(beatStart + totalWidth * 0.25, baselineY);
+        // PR segment - flat isoelectric line (PR interval ~140ms total from P start)
+        const prEnd = beatStart + pixelsPerMm * 3.5; // ~140ms from beat start
+        ctx.lineTo(prEnd, baselineY);
 
-        // Narrow QRS
-        ctx.lineTo(beatStart + totalWidth * 0.28, baselineY + amplitudeScale * 0.08);
-        ctx.lineTo(beatStart + totalWidth * 0.33, baselineY - amplitudeScale * 0.95);
-        ctx.lineTo(beatStart + totalWidth * 0.38, baselineY + amplitudeScale * 0.15);
-        ctx.lineTo(beatStart + totalWidth * 0.42, baselineY);
+        // Narrow QRS (normal conduction)
+        const qrsWidth = pixelsPerMm * 2; // ~80ms narrow QRS
+        ctx.lineTo(prEnd + qrsWidth * 0.1, baselineY + amplitudeScale * 0.08); // small q
+        ctx.lineTo(prEnd + qrsWidth * 0.35, baselineY - amplitudeScale * 0.95); // tall R
+        ctx.lineTo(prEnd + qrsWidth * 0.6, baselineY + amplitudeScale * 0.15); // small s
+        ctx.lineTo(prEnd + qrsWidth * 0.75, baselineY);
+
+        // ST segment
+        const stEnd = prEnd + qrsWidth + pixelsPerMm * 1;
+        ctx.lineTo(stEnd, baselineY);
 
         // T wave
-        const tStart = beatStart + totalWidth * 0.48;
-        ctx.lineTo(tStart, baselineY);
+        const tWidth = pixelsPerMm * 3;
         for (let t = 0; t <= 1; t += 0.1) {
-          ctx.lineTo(tStart + t * (beatEnd - tStart) * 0.6, baselineY - amplitudeScale * 0.16 * Math.sin(t * Math.PI));
+          ctx.lineTo(stEnd + t * tWidth, baselineY - amplitudeScale * 0.18 * Math.sin(t * Math.PI));
         }
 
         ctx.lineTo(beatEnd, baselineY);
@@ -1846,8 +1810,10 @@ export default function RhythmStrip({
 
       ctx.stroke();
     } else if (waveformType === 'failure_capture_v') {
-      // Ventricular Failure to Capture - V spikes without QRS, underlying slow escape
-      const patternLength = ventricularIntervalPx * 3;
+      // Ventricular Failure to Capture - V spikes without QRS, very slow escape (~13 bpm)
+      // 13 bpm = 60/13 = 4.6 sec = ~115mm per escape beat
+      const escapeInterval = pixelsPerMm * 115;
+      const patternLength = escapeInterval;
       const startPattern = Math.floor(offset / patternLength) - 1;
       const numPatterns = Math.ceil(width / patternLength) + 3;
 
@@ -1857,25 +1823,20 @@ export default function RhythmStrip({
       for (let i = 0; i < numPatterns; i++) {
         const patternStart = (startPattern + i) * patternLength - offset;
 
-        // First spike - fails to capture
-        const spike1X = patternStart + pixelsPerMm * 3;
-        ctx.lineTo(spike1X, baselineY);
-        ctx.lineTo(spike1X, baselineY - amplitudeScale * 0.5);
-        ctx.lineTo(spike1X + 1, baselineY - amplitudeScale * 0.5);
-        ctx.lineTo(spike1X + 1, baselineY);
-        // No QRS follows - flat baseline
-        ctx.lineTo(patternStart + ventricularIntervalPx, baselineY);
+        // Multiple failed spikes before escape
+        for (let s = 0; s < 4; s++) {
+          const spikeX = patternStart + pixelsPerMm * 20 * (s + 1);
+          if (spikeX < patternStart + escapeInterval - pixelsPerMm * 20) {
+            ctx.lineTo(spikeX, baselineY);
+            ctx.lineTo(spikeX, baselineY - amplitudeScale * 0.5);
+            ctx.lineTo(spikeX + 1, baselineY - amplitudeScale * 0.5);
+            ctx.lineTo(spikeX + 1, baselineY);
+          }
+        }
 
-        // Second spike - also fails
-        const spike2X = patternStart + ventricularIntervalPx + pixelsPerMm * 3;
-        ctx.lineTo(spike2X, baselineY);
-        ctx.lineTo(spike2X, baselineY - amplitudeScale * 0.5);
-        ctx.lineTo(spike2X + 1, baselineY - amplitudeScale * 0.5);
-        ctx.lineTo(spike2X + 1, baselineY);
-        ctx.lineTo(patternStart + ventricularIntervalPx * 1.8, baselineY);
-
-        // Escape beat eventually (wide QRS)
-        const escapeX = patternStart + ventricularIntervalPx * 1.8;
+        // Escape beat eventually (wide QRS) near end of pattern
+        const escapeX = patternStart + escapeInterval - pixelsPerMm * 15;
+        ctx.lineTo(escapeX, baselineY);
         drawVentricularComplex(ctx, escapeX);
 
         ctx.lineTo(patternStart + patternLength, baselineY);
@@ -2010,56 +1971,106 @@ export default function RhythmStrip({
       }
       ctx.stroke();
     } else if (waveformType === 'oversensing_a') {
-      // Atrial Oversensing — atrial lead sees non-P signals, inhibits pacing
-      // Shows pauses where atrial pacing should occur but doesn't
-      const startBeat = Math.floor(offset / ventricularIntervalPx) - 1;
-      const numBeatsVisible = Math.ceil(width / ventricularIntervalPx) + 3;
+      // Atrial Oversensing — leads to underpacing, junctional rhythm escape
+      // Pattern: normal paced beat at 72 bpm, then junctional escape at 55 bpm
+      const normalInterval = pixelsPerMm * (60 / 72) * speed; // 72 bpm paced
+      const junctionalInterval = pixelsPerMm * (60 / 55) * speed; // 55 bpm junctional
+      const patternLength = normalInterval + junctionalInterval * 2;
+      const startPattern = Math.floor(offset / patternLength) - 1;
+      const numPatterns = Math.ceil(width / patternLength) + 3;
 
       ctx.beginPath();
-      ctx.moveTo(startBeat * ventricularIntervalPx - offset, baselineY);
 
-      for (let i = 0; i < numBeatsVisible; i++) {
-        const beat = startBeat + i;
-        const beatStart = beat * ventricularIntervalPx - offset;
-        const beatEnd = (beat + 1) * ventricularIntervalPx - offset;
+      for (let i = 0; i < numPatterns; i++) {
+        const patternStart = (startPattern + i) * patternLength - offset;
+        let currentX = patternStart;
 
-        // Some beats have atrial spike + P wave, others just pause (oversensed)
-        const shouldPace = (beat % 3) !== 1; // Skip every 3rd beat (oversensed)
+        // Move to pattern start
+        ctx.moveTo(currentX, baselineY);
 
-        if (shouldPace) {
-          // Normal paced P wave
-          const aSpikeX = beatStart + pixelsPerMm * 2;
-          ctx.lineTo(aSpikeX, baselineY);
-          ctx.lineTo(aSpikeX, baselineY - amplitudeScale * 0.35);
-          ctx.lineTo(aSpikeX + 1, baselineY - amplitudeScale * 0.35);
-          ctx.lineTo(aSpikeX + 1, baselineY);
+        // ---- BEAT 1: Normal atrial paced beat at 72 bpm ----
+        // Atrial spike
+        const aSpikeX = currentX + pixelsPerMm * 2;
+        ctx.lineTo(aSpikeX, baselineY);
+        ctx.lineTo(aSpikeX, baselineY - amplitudeScale * 0.35);
+        ctx.lineTo(aSpikeX + 1, baselineY - amplitudeScale * 0.35);
+        ctx.lineTo(aSpikeX + 1, baselineY);
 
-          // Small paced P wave
-          const pHeight = amplitudeScale * 0.10;
-          for (let t = 0; t <= 1; t += 0.1) {
-            ctx.lineTo(aSpikeX + 1 + t * pixelsPerMm * 2, baselineY - pHeight * Math.sin(t * Math.PI));
-          }
+        // Paced P wave
+        for (let t = 0; t <= 1; t += 0.1) {
+          ctx.lineTo(aSpikeX + 1 + t * pixelsPerMm * 2, baselineY - amplitudeScale * 0.10 * Math.sin(t * Math.PI));
         }
 
-        // Normal QRS (ventricular sensing intact)
-        const qrsStart = beatStart + pixelsPerMm * 8;
-        const qrsHeight = amplitudeScale * 0.8;
-        const qrsWidth = pixelsPerMm * 2;
+        // PR interval to QRS
+        const qrs1Start = aSpikeX + pixelsPerMm * 6;
+        ctx.lineTo(qrs1Start, baselineY);
 
-        ctx.lineTo(qrsStart, baselineY);
-        ctx.lineTo(qrsStart + qrsWidth * 0.15, baselineY + qrsHeight * 0.1);
-        ctx.lineTo(qrsStart + qrsWidth * 0.35, baselineY - qrsHeight);
-        ctx.lineTo(qrsStart + qrsWidth * 0.55, baselineY + qrsHeight * 0.15);
-        ctx.lineTo(qrsStart + qrsWidth * 0.75, baselineY);
+        // QRS complex (narrow, normal)
+        ctx.lineTo(qrs1Start + pixelsPerMm * 0.5, baselineY - amplitudeScale * 0.08);
+        ctx.lineTo(qrs1Start + pixelsPerMm * 1, baselineY - amplitudeScale * 0.65);
+        ctx.lineTo(qrs1Start + pixelsPerMm * 1.5, baselineY + amplitudeScale * 0.15);
+        ctx.lineTo(qrs1Start + pixelsPerMm * 2, baselineY);
+
+        // ST segment and T wave
+        const t1Start = qrs1Start + pixelsPerMm * 4;
+        ctx.lineTo(t1Start, baselineY);
+        for (let t = 0; t <= 1; t += 0.1) {
+          ctx.lineTo(t1Start + t * pixelsPerMm * 3, baselineY - amplitudeScale * 0.12 * Math.sin(t * Math.PI));
+        }
+        currentX = patternStart + normalInterval;
+        ctx.lineTo(currentX, baselineY);
+
+        // ---- PAUSE (oversensing inhibits atrial pacing) ----
+        currentX += pixelsPerMm * 3;
+        ctx.lineTo(currentX, baselineY);
+
+        // ---- BEAT 2: Junctional escape at 55 bpm ----
+        // Small inverted P (retrograde)
+        for (let t = 0; t <= 1; t += 0.1) {
+          ctx.lineTo(currentX + t * pixelsPerMm * 1.5, baselineY + amplitudeScale * 0.06 * Math.sin(t * Math.PI));
+        }
+        currentX += pixelsPerMm * 2;
+
+        // Narrow QRS (junctional)
+        ctx.lineTo(currentX, baselineY);
+        ctx.lineTo(currentX + pixelsPerMm * 0.5, baselineY - amplitudeScale * 0.08);
+        ctx.lineTo(currentX + pixelsPerMm * 1, baselineY - amplitudeScale * 0.60);
+        ctx.lineTo(currentX + pixelsPerMm * 1.5, baselineY + amplitudeScale * 0.12);
+        ctx.lineTo(currentX + pixelsPerMm * 2, baselineY);
 
         // T wave
-        const tStart = qrsStart + qrsWidth + pixelsPerMm * 2;
-        const tHeight = amplitudeScale * 0.15;
+        const t2Start = currentX + pixelsPerMm * 4;
+        ctx.lineTo(t2Start, baselineY);
         for (let t = 0; t <= 1; t += 0.1) {
-          ctx.lineTo(tStart + t * pixelsPerMm * 3, baselineY - tHeight * Math.sin(t * Math.PI));
+          ctx.lineTo(t2Start + t * pixelsPerMm * 3, baselineY - amplitudeScale * 0.10 * Math.sin(t * Math.PI));
         }
+        currentX = patternStart + normalInterval + junctionalInterval;
+        ctx.lineTo(currentX, baselineY);
 
-        ctx.lineTo(beatEnd, baselineY);
+        // ---- BEAT 3: Another junctional escape at 55 bpm ----
+        currentX += pixelsPerMm * 3;
+        ctx.lineTo(currentX, baselineY);
+
+        // Small inverted P (retrograde)
+        for (let t = 0; t <= 1; t += 0.1) {
+          ctx.lineTo(currentX + t * pixelsPerMm * 1.5, baselineY + amplitudeScale * 0.06 * Math.sin(t * Math.PI));
+        }
+        currentX += pixelsPerMm * 2;
+
+        // Narrow QRS
+        ctx.lineTo(currentX, baselineY);
+        ctx.lineTo(currentX + pixelsPerMm * 0.5, baselineY - amplitudeScale * 0.08);
+        ctx.lineTo(currentX + pixelsPerMm * 1, baselineY - amplitudeScale * 0.60);
+        ctx.lineTo(currentX + pixelsPerMm * 1.5, baselineY + amplitudeScale * 0.12);
+        ctx.lineTo(currentX + pixelsPerMm * 2, baselineY);
+
+        // T wave
+        const t3Start = currentX + pixelsPerMm * 4;
+        ctx.lineTo(t3Start, baselineY);
+        for (let t = 0; t <= 1; t += 0.1) {
+          ctx.lineTo(t3Start + t * pixelsPerMm * 3, baselineY - amplitudeScale * 0.10 * Math.sin(t * Math.PI));
+        }
+        ctx.lineTo(patternStart + patternLength, baselineY);
       }
       ctx.stroke();
     } else if (waveformType === 'oversensing_v') {
@@ -2082,18 +2093,18 @@ export default function RhythmStrip({
         ctx.lineTo(spike1X + 1, baselineY - amplitudeScale * 0.5);
         ctx.lineTo(spike1X + 1, baselineY);
 
-        // Paced QRS (RV apical - negative in lead II)
+        // Paced QRS (RV apical) - less deep, moved up on y axis
         const qrsWidth = pixelsPerMm * 4;
-        const sDepth = amplitudeScale * 0.85;
+        const sDepth = amplitudeScale * 0.50; // Less deep
         const tHeight = amplitudeScale * 0.20;
 
         ctx.lineTo(spike1X + 1 + qrsWidth * 0.05, baselineY);
-        ctx.lineTo(spike1X + 1 + qrsWidth * 0.12, baselineY - amplitudeScale * 0.15);
+        ctx.lineTo(spike1X + 1 + qrsWidth * 0.12, baselineY - amplitudeScale * 0.20);
         ctx.lineTo(spike1X + 1 + qrsWidth * 0.20, baselineY);
-        ctx.lineTo(spike1X + 1 + qrsWidth * 0.35, baselineY + sDepth * 0.7);
+        ctx.lineTo(spike1X + 1 + qrsWidth * 0.35, baselineY + sDepth * 0.6);
         ctx.lineTo(spike1X + 1 + qrsWidth * 0.45, baselineY + sDepth);
-        ctx.lineTo(spike1X + 1 + qrsWidth * 0.55, baselineY + sDepth * 0.7);
-        ctx.lineTo(spike1X + 1 + qrsWidth * 0.70, baselineY + sDepth * 0.15);
+        ctx.lineTo(spike1X + 1 + qrsWidth * 0.55, baselineY + sDepth * 0.6);
+        ctx.lineTo(spike1X + 1 + qrsWidth * 0.70, baselineY + sDepth * 0.1);
 
         // T wave (discordant - upright)
         const tStart1 = spike1X + 1 + qrsWidth * 0.75;
@@ -2111,14 +2122,14 @@ export default function RhythmStrip({
         ctx.lineTo(spike2X + 1, baselineY - amplitudeScale * 0.5);
         ctx.lineTo(spike2X + 1, baselineY);
 
-        // Second paced QRS
+        // Second paced QRS - same as first, less deep
         ctx.lineTo(spike2X + 1 + qrsWidth * 0.05, baselineY);
-        ctx.lineTo(spike2X + 1 + qrsWidth * 0.12, baselineY - amplitudeScale * 0.15);
+        ctx.lineTo(spike2X + 1 + qrsWidth * 0.12, baselineY - amplitudeScale * 0.20);
         ctx.lineTo(spike2X + 1 + qrsWidth * 0.20, baselineY);
-        ctx.lineTo(spike2X + 1 + qrsWidth * 0.35, baselineY + sDepth * 0.7);
+        ctx.lineTo(spike2X + 1 + qrsWidth * 0.35, baselineY + sDepth * 0.6);
         ctx.lineTo(spike2X + 1 + qrsWidth * 0.45, baselineY + sDepth);
-        ctx.lineTo(spike2X + 1 + qrsWidth * 0.55, baselineY + sDepth * 0.7);
-        ctx.lineTo(spike2X + 1 + qrsWidth * 0.70, baselineY + sDepth * 0.15);
+        ctx.lineTo(spike2X + 1 + qrsWidth * 0.55, baselineY + sDepth * 0.6);
+        ctx.lineTo(spike2X + 1 + qrsWidth * 0.70, baselineY + sDepth * 0.1);
 
         const tStart2 = spike2X + 1 + qrsWidth * 0.75;
         for (let t = 0; t <= 1; t += 0.1) {
@@ -2130,8 +2141,10 @@ export default function RhythmStrip({
       ctx.stroke();
     } else if (waveformType === 'couplet') {
       // Ventricular Couplet - sinus rhythm with 2 consecutive PVCs
-      // First PVC ~200ms after sinus QRS, second PVC ~40ms after first
-      const patternLength = ventricularIntervalPx * 4; // 2 normal + couplet + pause
+      // 80ms gap between PVCs, compensatory pause ~55 bpm feel
+      // Shorten compensatory pause (was 27mm, now 7mm = 4 boxes shorter)
+      const pauseInterval = pixelsPerMm * 7; // Shorter compensatory pause
+      const patternLength = ventricularIntervalPx * 2 + pixelsPerMm * 30 + pauseInterval; // 2 sinus + couplet width + pause
       const startPattern = Math.floor(offset / patternLength) - 1;
       const numPatterns = Math.ceil(width / patternLength) + 3;
 
@@ -2147,27 +2160,38 @@ export default function RhythmStrip({
         drawSinusComplex(ctx, beat1Start, beat1End, false, false, true);
         ctx.lineTo(beat1End, baselineY);
 
-        // Second normal sinus beat (QRS ends around beatStart + 10mm)
+        // Second normal sinus beat - only draw up to where PVC will start
+        // Sinus T wave ends around startX + 13mm, PVC starts ~2mm after that
         const beat2Start = beat1End;
-        const beat2QrsEnd = beat2Start + pixelsPerMm * 10; // End of QRS
-        drawSinusComplex(ctx, beat2Start, beat2Start + ventricularIntervalPx, false, false, true);
+        const beat2TEnd = beat2Start + pixelsPerMm * 13; // Approximate T wave end
+        const pvc1Start = beat2TEnd + pixelsPerMm * 2; // Small gap after T wave
 
-        // First PVC - 200ms (5mm) after the sinus QRS ends
-        const pvc1Start = beat2QrsEnd + pixelsPerMm * 5; // 200ms coupling
-        drawVentricularComplex(ctx, pvc1Start);
+        // Draw beat2 only up to where PVC starts (prevents flat line overlap)
+        drawSinusComplex(ctx, beat2Start, pvc1Start, false, false, true);
 
-        // Second PVC - 40ms (1mm) space between them
-        // PVC QRS is ~6mm wide, so second starts 6mm + 1mm after first
-        const pvc2Start = pvc1Start + pixelsPerMm * 6 + pixelsPerMm * 1; // 40ms gap
-        drawVentricularComplex(ctx, pvc2Start);
+        // First PVC
+        const pvc1End = drawVentricularComplex(ctx, pvc1Start);
 
-        // Compensatory pause
+        // Second PVC - 80ms (2mm) after first PVC's T wave ends
+        const pvc2Start = pvc1End + pixelsPerMm * 2; // 80ms gap after T wave
+        const pvc2End = drawVentricularComplex(ctx, pvc2Start);
+
+        // Compensatory pause - ~55 bpm feel to next sinus beat
+        ctx.lineTo(pvc2End, baselineY);
         ctx.lineTo(patternStart + patternLength, baselineY);
       }
       ctx.stroke();
     } else if (waveformType === 'nsvt') {
-      // Non-sustained VT: sinus rhythm, then run of 4-6 wide QRS, then back to sinus
-      const patternLength = ventricularIntervalPx * 8;
+      // Non-sustained VT: 3 sinus beats at 72 bpm, then 8 VT beats, then sinus resumes
+      const nsrInterval = pixelsPerMm * (60 / 72) * speed; // 72 bpm = 20.83mm
+      const pvcGap = pixelsPerMm * 1; // 40ms = 1mm gap between PVCs
+      const vtBeats = 8; // 8 VT beats
+      const nsrBeatsAfter = 2;
+
+      // PVC complex is ~9mm wide, plus 1mm gap = 10mm per PVC
+      const pvcTotalWidth = pixelsPerMm * 10;
+      const vtRunLength = pvcTotalWidth * vtBeats;
+      const patternLength = nsrInterval * 3 + vtRunLength + nsrInterval * nsrBeatsAfter;
       const startPattern = Math.floor(offset / patternLength) - 1;
       const numPatterns = Math.ceil(width / patternLength) + 3;
 
@@ -2177,27 +2201,37 @@ export default function RhythmStrip({
       for (let i = 0; i < numPatterns; i++) {
         const patternStart = (startPattern + i) * patternLength - offset;
 
-        // 2 sinus beats
-        const beat1End = patternStart + ventricularIntervalPx;
-        drawSinusComplex(ctx, patternStart, beat1End, false, false, true);
-        ctx.lineTo(beat1End, baselineY);
-
-        const beat2End = beat1End + ventricularIntervalPx;
-        drawSinusComplex(ctx, beat1End, beat2End, false, false, true);
-        ctx.lineTo(beat2End, baselineY);
-
-        // Run of 5 VT beats (fast rate ~180 bpm = shorter intervals)
-        const vtInterval = pixelsPerMm * (60 / 180) * speed; // ~180 bpm
-        let vtX = beat2End;
-        for (let v = 0; v < 5; v++) {
-          drawVentricularComplex(ctx, vtX);
-          vtX += vtInterval;
+        // 3 normal sinus beats at 72 bpm
+        let currentX = patternStart;
+        for (let s = 0; s < 3; s++) {
+          const beatEnd = currentX + nsrInterval;
+          // For beat 3 (s=2), don't draw full interval - PVCs will start
+          if (s < 2) {
+            drawSinusComplex(ctx, currentX, beatEnd, false, false, true);
+            currentX = beatEnd;
+          } else {
+            // Last sinus before VT run - draw without trailing baseline
+            drawSinusComplex(ctx, currentX, currentX + nsrInterval * 0.7, false, false, true);
+            currentX = currentX + nsrInterval * 0.75; // Position for first PVC
+          }
         }
 
-        // Back to sinus
-        ctx.lineTo(vtX + pixelsPerMm * 4, baselineY); // Short pause
-        drawSinusComplex(ctx, vtX + pixelsPerMm * 4, patternStart + patternLength, false, false, true);
-        ctx.lineTo(patternStart + patternLength, baselineY);
+        // Run of 4 PVCs with 40ms (1mm) gap between each
+        ctx.lineTo(currentX, baselineY);
+        for (let v = 0; v < vtBeats; v++) {
+          const pvcEnd = drawVentricularComplex(ctx, currentX);
+          currentX = pvcEnd + pvcGap; // 40ms gap after each PVC
+        }
+
+        // Compensatory pause then 2 more sinus beats
+        ctx.lineTo(currentX + pixelsPerMm * 4, baselineY);
+        currentX = currentX + pixelsPerMm * 4;
+
+        for (let s = 0; s < nsrBeatsAfter; s++) {
+          const beatEnd = currentX + nsrInterval;
+          drawSinusComplex(ctx, currentX, beatEnd, false, false, true);
+          currentX = beatEnd;
+        }
       }
       ctx.stroke();
     } else if (waveformType === 'wpw') {
@@ -2416,35 +2450,40 @@ export default function RhythmStrip({
         const qrsStart = pStart + pWidth + pixelsPerMm * 3;
         ctx.lineTo(qrsStart, baselineY);
 
-        // Wide QRS - LBBB pattern (broad, notched R wave in lead II)
-        const qrsWidth = pixelsPerMm * 4; // Wide ≥120ms
-        const rHeight = amplitudeScale * 0.85;
+        // Wide QRS - LBBB V6 pattern (M-shaped with notched R wave)
+        const qrsWidth = pixelsPerMm * 5; // Wide ≥120ms, more spacing
+        const rHeight = amplitudeScale * 0.80;
 
-        // Small q or no q
+        // No q wave in V6 with LBBB
         ctx.lineTo(qrsStart + qrsWidth * 0.05, baselineY);
 
-        // Broad R wave with notch (M-shaped in lateral leads)
-        ctx.lineTo(qrsStart + qrsWidth * 0.15, baselineY - rHeight * 0.4);
-        ctx.lineTo(qrsStart + qrsWidth * 0.25, baselineY - rHeight * 0.35); // Notch
-        ctx.lineTo(qrsStart + qrsWidth * 0.35, baselineY - rHeight * 0.7);
-        ctx.lineTo(qrsStart + qrsWidth * 0.45, baselineY - rHeight); // Peak
-        ctx.lineTo(qrsStart + qrsWidth * 0.55, baselineY - rHeight * 0.85);
-        ctx.lineTo(qrsStart + qrsWidth * 0.65, baselineY - rHeight * 0.5);
-        ctx.lineTo(qrsStart + qrsWidth * 0.80, baselineY);
+        // M-shaped R wave - first peak
+        ctx.lineTo(qrsStart + qrsWidth * 0.18, baselineY - rHeight * 0.70);
 
-        // Discordant ST-T changes (T wave opposite to QRS)
+        // Notch (clear dip between peaks, stays above baseline)
+        ctx.lineTo(qrsStart + qrsWidth * 0.30, baselineY - rHeight * 0.45);
+
+        // Second peak (slightly taller)
+        ctx.lineTo(qrsStart + qrsWidth * 0.45, baselineY - rHeight);
+        ctx.lineTo(qrsStart + qrsWidth * 0.55, baselineY - rHeight * 0.85);
+
+        // Smooth descent back to baseline
+        ctx.lineTo(qrsStart + qrsWidth * 0.70, baselineY - rHeight * 0.3);
+        ctx.lineTo(qrsStart + qrsWidth * 0.85, baselineY);
+
+        // T wave in V6 for LBBB - upright (concordant in lateral leads)
         const tStart = qrsStart + qrsWidth + pixelsPerMm * 1;
-        const tDepth = amplitudeScale * 0.20; // Inverted T
+        const tHeight = amplitudeScale * 0.18; // Upright T wave
         for (let t = 0; t <= 1; t += 0.1) {
-          ctx.lineTo(tStart + t * pixelsPerMm * 4, baselineY + tDepth * Math.sin(t * Math.PI));
+          ctx.lineTo(tStart + t * pixelsPerMm * 4, baselineY - tHeight * Math.sin(t * Math.PI));
         }
 
         ctx.lineTo(beatEnd, baselineY);
       }
       ctx.stroke();
     } else if (waveformType === 'rbbb') {
-      // RBBB: Wide QRS with RSR' in V1 (M-shaped), wide S in lateral leads
-      // For lead II, RBBB typically shows wide slurred S wave
+      // RBBB: RSR' pattern in V1 (M-shaped "rabbit ears")
+      // Classic V1 appearance: R, small S, then tall R'
       const startBeat = Math.floor(offset / ventricularIntervalPx) - 1;
       const numBeatsVisible = Math.ceil(width / ventricularIntervalPx) + 3;
 
@@ -2469,28 +2508,33 @@ export default function RhythmStrip({
         const qrsStart = pStart + pWidth + pixelsPerMm * 3;
         ctx.lineTo(qrsStart, baselineY);
 
-        // Wide QRS - RBBB pattern (RSR' in V1, wide S in lateral/lead II)
-        const qrsWidth = pixelsPerMm * 4; // Wide ≥120ms
-        const rHeight = amplitudeScale * 0.75;
-        const sDepth = amplitudeScale * 0.35; // Wide, slurred S wave
+        // Wide QRS - RBBB RSR' pattern in V1
+        // Classic M-shaped: R up, S down below baseline, R' up (taller)
+        const qrsWidth = pixelsPerMm * 5; // Wide ≥120ms
+        const rHeight = amplitudeScale * 0.45; // Initial R
+        const sDepth = amplitudeScale * 0.20; // S wave goes below baseline
+        const rPrimeHeight = amplitudeScale * 0.70; // Tall R' (the "prime")
 
-        // Initial R wave (normal initial forces)
-        ctx.lineTo(qrsStart + qrsWidth * 0.08, baselineY);
+        // Initial R wave
+        ctx.lineTo(qrsStart + qrsWidth * 0.05, baselineY);
         ctx.lineTo(qrsStart + qrsWidth * 0.18, baselineY - rHeight);
-        ctx.lineTo(qrsStart + qrsWidth * 0.28, baselineY - rHeight * 0.3);
 
-        // S wave - wide and slurred (delayed RV depolarization)
-        ctx.lineTo(qrsStart + qrsWidth * 0.40, baselineY + sDepth * 0.5);
-        ctx.lineTo(qrsStart + qrsWidth * 0.55, baselineY + sDepth); // S nadir
-        ctx.lineTo(qrsStart + qrsWidth * 0.70, baselineY + sDepth * 0.7);
-        ctx.lineTo(qrsStart + qrsWidth * 0.85, baselineY + sDepth * 0.2);
-        ctx.lineTo(qrsStart + qrsWidth, baselineY);
+        // S wave - smooth dip below baseline
+        ctx.lineTo(qrsStart + qrsWidth * 0.30, baselineY + sDepth);
 
-        // T wave (may be inverted in right precordial leads, usually upright in II)
+        // R' wave (second peak - taller, smooth curve up)
+        ctx.lineTo(qrsStart + qrsWidth * 0.50, baselineY - rPrimeHeight);
+        ctx.lineTo(qrsStart + qrsWidth * 0.62, baselineY - rPrimeHeight * 0.5);
+        ctx.lineTo(qrsStart + qrsWidth * 0.75, baselineY);
+
+        // ST segment (slight depression in V1)
+        ctx.lineTo(qrsStart + qrsWidth + pixelsPerMm * 0.5, baselineY + amplitudeScale * 0.03);
+
+        // T wave inverted in V1 (appropriate discordance) - smooth curve
         const tStart = qrsStart + qrsWidth + pixelsPerMm * 1.5;
-        const tHeight = amplitudeScale * 0.15;
+        const tDepth = amplitudeScale * 0.12; // Inverted
         for (let t = 0; t <= 1; t += 0.1) {
-          ctx.lineTo(tStart + t * pixelsPerMm * 3.5, baselineY - tHeight * Math.sin(t * Math.PI));
+          ctx.lineTo(tStart + t * pixelsPerMm * 3.5, baselineY + tDepth * Math.sin(t * Math.PI));
         }
 
         ctx.lineTo(beatEnd, baselineY);
@@ -2587,13 +2631,16 @@ export default function RhythmStrip({
       return { beatNum: 0, rrInterval: ventricularIntervalPx };
     }
     else if (waveformType === 'sinus_pause') {
-      const patternLength = ventricularIntervalPx * 5.5;
+      // Sinus pause: ~16 bpm during pause = 3.75× normal interval
+      // Pattern: beat1, beat2, PAUSE (3.75 intervals), beat3
+      const pauseIntervals = 3.75; // ~16 bpm at 60 bpm underlying
+      const patternLength = ventricularIntervalPx * (3 + pauseIntervals);
       const patternNum = Math.floor(offset / patternLength);
       const posInPattern = offset % patternLength;
 
-      // beat1, beat2, PAUSE, beat3
-      const beatPositions = [0, 1.0, 2.0, 4.5];
-      const rrIntervals = [1.0, 1.0, 2.5, 1.0];
+      // beat1 at 0, beat2 at 1.0, pause starts at 2.0, beat3 at 2.0 + 3.75
+      const beatPositions = [0, 1.0, 2.0, 2.0 + pauseIntervals];
+      const rrIntervals = [1.0, 1.0, pauseIntervals, 1.0]; // Pause shows ~16 bpm
 
       for (let i = beatPositions.length - 1; i >= 0; i--) {
         if (posInPattern >= beatPositions[i] * ventricularIntervalPx) {
@@ -2603,14 +2650,16 @@ export default function RhythmStrip({
       return { beatNum: patternNum * 4, rrInterval: ventricularIntervalPx };
     }
     else if (waveformType === 'sinus_arrest') {
-      // Pattern: beat1, beat2, ARREST (exactly 2×), beat3 = 5.0 total
-      const patternLength = ventricularIntervalPx * 5.0;
+      // Sinus arrest: 60 bpm normal → 19 bpm during arrest
+      // 19 bpm = 60/19 = ~3.16 intervals
+      const arrestIntervals = 3.16;
+      const patternLength = ventricularIntervalPx * (3 + arrestIntervals);
       const patternNum = Math.floor(offset / patternLength);
       const posInPattern = offset % patternLength;
 
-      // beat1 at 0, beat2 at 1.0, ARREST at 2.0, beat3 at 4.0
-      const beatPositions = [0, 1.0, 2.0, 4.0];
-      const rrIntervals = [1.0, 1.0, 2.0, 1.0]; // ARREST = exactly 2× P-P
+      // beat1 at 0, beat2 at 1.0, arrest starts at 2.0, beat3 at 2.0 + 3.16
+      const beatPositions = [0, 1.0, 2.0, 2.0 + arrestIntervals];
+      const rrIntervals = [1.0, 1.0, arrestIntervals, 1.0]; // Shows 60, 60, 19, 60
 
       for (let i = beatPositions.length - 1; i >= 0; i--) {
         if (posInPattern >= beatPositions[i] * ventricularIntervalPx) {
@@ -2640,7 +2689,7 @@ export default function RhythmStrip({
     }
     else if (waveformType === 'v_bigeminy') {
       // Bigeminy: NSR → PVC (200ms after T wave) → comp pause
-      // Show underlying sinus rate for display, not the short coupling interval
+      // Pattern: 72 bpm (NSR), 144 bpm (PVC comes early), repeat
       const baseInterval = ventricularIntervalPx;
       const pvcQrsWidth = pixelsPerMm * 5;
       const pvcGap = pixelsPerMm * 5; // 200ms
@@ -2654,13 +2703,13 @@ export default function RhythmStrip({
       const posInPattern = ((offset % patternLength) + patternLength) % patternLength;
 
       if (posInPattern >= pvcStart) {
-        return { beatNum: 1, rrInterval: baseInterval }; // Show underlying sinus rate
+        return { beatNum: 1, rrInterval: baseInterval * 0.5 }; // 144 bpm for PVC
       }
-      return { beatNum: 0, rrInterval: baseInterval }; // Show underlying sinus rate
+      return { beatNum: 0, rrInterval: baseInterval }; // 72 bpm for NSR
     }
     else if (waveformType === 'v_trigeminy') {
       // Trigeminy: NSR → NSR → PVC (200ms after NSR #2 T wave) → comp pause
-      // Show underlying sinus rate for display
+      // Pattern: 72 bpm (NSR), 72 bpm (NSR), 144 bpm (PVC), repeat
       const baseInterval = ventricularIntervalPx;
       const pvcQrsWidth = pixelsPerMm * 5;
       const pvcGap = pixelsPerMm * 5; // 200ms
@@ -2675,23 +2724,24 @@ export default function RhythmStrip({
       const posInPattern = ((offset % patternLength) + patternLength) % patternLength;
 
       if (posInPattern >= pvcStart) {
-        return { beatNum: 2, rrInterval: baseInterval }; // Show underlying sinus rate
+        return { beatNum: 2, rrInterval: baseInterval * 0.5 }; // 144 bpm for PVC
       } else if (posInPattern >= baseInterval) {
-        return { beatNum: 1, rrInterval: baseInterval }; // Show underlying sinus rate
+        return { beatNum: 1, rrInterval: baseInterval }; // 72 bpm for NSR
       }
-      return { beatNum: 0, rrInterval: baseInterval }; // Show underlying sinus rate
+      return { beatNum: 0, rrInterval: baseInterval }; // 72 bpm for NSR
     }
     else if (waveformType === 'mobitz1') {
       // Mobitz I (Wenckebach): Progressive PR prolongation, then dropped beat
-      // 4:3 pattern - show underlying atrial rate, change only at dropped beat
+      // 4:3 pattern - 75 bpm for conducted beats, 35 bpm for dropped beat
       const cycleLength = atrialIntervalPx * 4;
       const posInCycle = ((offset % cycleLength) + cycleLength) % cycleLength;
 
-      // Show underlying atrial rate for conducted beats, pause rate only for dropped beat
+      // Show 75 bpm for conducted beats, 35 bpm for dropped beat
+      // 35 bpm = 75 bpm * (75/35) ratio = 2.14x longer interval
       if (posInCycle >= atrialIntervalPx * 3) {
-        return { beatNum: 3, rrInterval: atrialIntervalPx * 2 }; // Dropped beat - show pause (~35 bpm)
+        return { beatNum: 3, rrInterval: atrialIntervalPx * 2.14 }; // Dropped beat - 35 bpm
       }
-      // All conducted beats show underlying atrial rate
+      // All conducted beats show 75 bpm
       return { beatNum: Math.floor(posInCycle / atrialIntervalPx), rrInterval: atrialIntervalPx };
     }
     else if (waveformType === 'mobitz2') {
@@ -2803,46 +2853,46 @@ export default function RhythmStrip({
       return { beatNum: 0, rrInterval: normalRR };  // Normal
     }
     else if (waveformType === 'nsvt') {
-      // NSVT: 3+ beats of VT then back to sinus
-      // Pattern: 2 NSR, 4 VT beats, 2 NSR
-      const normalRR = ventricularIntervalPx;
-      const vtRR = ventricularIntervalPx * 0.4;  // ~180 bpm VT
-      const patternLength = normalRR * 2 + vtRR * 4 + normalRR * 2;
+      // NSVT: 3 NSR at 72 bpm, then 8 VT beats at 220 bpm, then 2 NSR
+      // 72 bpm = 20.83mm, 220 bpm = 6.8mm at 25mm/s
+      const nsrRR = pixelsPerMm * (60 / 72) * speed;  // 72 bpm
+      const vtRR = pixelsPerMm * (60 / 220) * speed;   // 220 bpm
+      const patternLength = nsrRR * 3 + vtRR * 8 + pixelsPerMm * 2 + nsrRR * 2;
       const posInPattern = ((offset % patternLength) + patternLength) % patternLength;
 
-      const vtStart = normalRR * 2;
-      const vtEnd = vtStart + vtRR * 4;
+      const vtStart = nsrRR * 3;
+      const vtEnd = vtStart + vtRR * 8;
+      const postPause = vtEnd + pixelsPerMm * 2;
 
-      if (posInPattern >= vtEnd) {
-        return { beatNum: 6, rrInterval: normalRR };  // Back to NSR
+      if (posInPattern >= postPause) {
+        return { beatNum: 7, rrInterval: nsrRR };  // Back to NSR (72 bpm)
       } else if (posInPattern >= vtStart) {
-        return { beatNum: 2 + Math.floor((posInPattern - vtStart) / vtRR), rrInterval: vtRR };  // VT - fast
-      } else if (posInPattern >= normalRR) {
-        return { beatNum: 1, rrInterval: normalRR };  // NSR
+        return { beatNum: 3 + Math.floor((posInPattern - vtStart) / vtRR), rrInterval: vtRR };  // VT (220 bpm)
+      } else if (posInPattern >= nsrRR * 2) {
+        return { beatNum: 2, rrInterval: nsrRR };  // NSR (72 bpm)
+      } else if (posInPattern >= nsrRR) {
+        return { beatNum: 1, rrInterval: nsrRR };  // NSR (72 bpm)
       }
-      return { beatNum: 0, rrInterval: normalRR };  // NSR
+      return { beatNum: 0, rrInterval: nsrRR };  // NSR (72 bpm)
     }
     else if (waveformType === 'vfib') {
-      // VFib: Chaotic, show varying "rate" (not really measurable)
-      const chaosPattern = [0.15, 0.2, 0.12, 0.18, 0.22, 0.14, 0.19, 0.16];
-      const patternLength = chaosPattern.reduce((a, b) => a + b, 0) * ventricularIntervalPx;
-      const posInPattern = ((offset % patternLength) + patternLength) % patternLength;
-
-      let cumulative = 0;
-      for (let i = 0; i < chaosPattern.length; i++) {
-        const nextPos = cumulative + chaosPattern[i] * ventricularIntervalPx;
-        if (posInPattern < nextPos) {
-          return { beatNum: i, rrInterval: chaosPattern[i] * ventricularIntervalPx };  // Shows 300-500 bpm range
-        }
-        cumulative = nextPos;
-      }
-      return { beatNum: 0, rrInterval: ventricularIntervalPx * 0.15 };
+      // VFib: Chaotic, irregular ~250-350 bpm range
+      // Use pseudo-random variation based on position for dynamic display
+      const baseRR = pixelsPerMm * 5;  // ~300 bpm base
+      const beatNum = Math.floor(offset / baseRR);
+      // Vary between 250-350 bpm (4.3mm to 6mm)
+      const variation = 0.85 + 0.3 * Math.sin(offset * 0.1);
+      const dynamicRR = baseRR * variation;
+      return { beatNum, rrInterval: dynamicRR };
     }
     else if (waveformType === 'torsades') {
-      // Torsades: Polymorphic VT with twisting axis, ~200-250 bpm
-      const tdpRR = ventricularIntervalPx * 0.35;  // ~215 bpm
-      const beatNum = Math.floor(offset / tdpRR);
-      return { beatNum, rrInterval: tdpRR };
+      // Torsades: Polymorphic VT, ~240 bpm (4 beats per second)
+      const baseRR = pixelsPerMm * (60 / 240) * speed;  // 240 bpm base
+      const beatNum = Math.floor(offset / baseRR);
+      // Slight variation 200-250 bpm
+      const variation = 0.9 + 0.2 * Math.sin(offset * 0.03);
+      const dynamicRR = baseRR * variation;
+      return { beatNum, rrInterval: dynamicRR };
     }
     else if (waveformType === 'asystole') {
       // Asystole: No beats, show 0 bpm
@@ -2855,20 +2905,17 @@ export default function RhythmStrip({
       const beatNum = Math.floor(offset / escapeRR);
       return { beatNum, rrInterval: escapeRR };
     }
-    else if (waveformType === 'failure_capture_v' || waveformType === 'failure_capture_a') {
-      // Pacemaker failure to capture: Some beats don't capture
-      // Pattern: capture, capture, fail, capture
-      const patternLength = ventricularIntervalPx * 4;
-      const posInPattern = ((offset % patternLength) + patternLength) % patternLength;
-
-      if (posInPattern >= ventricularIntervalPx * 3) {
-        return { beatNum: 3, rrInterval: ventricularIntervalPx };
-      } else if (posInPattern >= ventricularIntervalPx * 2) {
-        return { beatNum: 2, rrInterval: ventricularIntervalPx * 2 };  // Pause during failed capture
-      } else if (posInPattern >= ventricularIntervalPx) {
-        return { beatNum: 1, rrInterval: ventricularIntervalPx };
-      }
-      return { beatNum: 0, rrInterval: ventricularIntervalPx };
+    else if (waveformType === 'failure_capture_v') {
+      // V failure to capture: Failed spikes with long pause to escape - 13 bpm
+      // 13 bpm = 60/13 = 4.6 sec = 115mm at 25mm/s
+      const escapeRR = pixelsPerMm * 115;  // ~13 bpm
+      const beatNum = Math.floor(offset / escapeRR);
+      return { beatNum, rrInterval: escapeRR };
+    }
+    else if (waveformType === 'failure_capture_a') {
+      // A failure to capture: A spikes fail but V pacing intact
+      const beatNum = Math.floor(offset / ventricularIntervalPx);
+      return { beatNum, rrInterval: ventricularIntervalPx };
     }
     else if (waveformType === 'undersensing_v' || waveformType === 'undersensing_a') {
       // Undersensing: Pacemaker fires too soon (doesn't see native beat)
@@ -2882,8 +2929,20 @@ export default function RhythmStrip({
       }
       return { beatNum: 0, rrInterval: ventricularIntervalPx };
     }
-    else if (waveformType === 'oversensing_v' || waveformType === 'oversensing_a') {
-      // Oversensing: Pacemaker inhibited by noise, causes pauses
+    else if (waveformType === 'oversensing_a') {
+      // A Oversensing: Normal paced at 72 bpm, then junctional escape at ~55 bpm
+      const normalRR = pixelsPerMm * (60 / 72) * speed;  // 72 bpm
+      const junctionalRR = pixelsPerMm * (60 / 55) * speed;  // 55 bpm junctional escape
+      const patternLength = normalRR + junctionalRR * 2; // 1 normal + 2 junctional
+      const posInPattern = ((offset % patternLength) + patternLength) % patternLength;
+      const beatNum = Math.floor(offset / junctionalRR);
+      if (posInPattern < normalRR) {
+        return { beatNum, rrInterval: normalRR };  // Normal paced (72 bpm)
+      }
+      return { beatNum, rrInterval: junctionalRR };  // Junctional escape (55 bpm)
+    }
+    else if (waveformType === 'oversensing_v') {
+      // V Oversensing: Pauses due to T wave oversensing
       const patternLength = ventricularIntervalPx * 4;
       const posInPattern = ((offset % patternLength) + patternLength) % patternLength;
 
@@ -3066,7 +3125,7 @@ export default function RhythmStrip({
         onClick={handleCanvasClick}
       />
       <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-        Lead II
+        {leadLabel}
       </div>
       <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
         {speed} mm/sec | <span className="font-mono">{displayRate}</span> bpm

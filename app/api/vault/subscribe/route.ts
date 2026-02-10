@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
             currency: STRIPE_CONFIG.CURRENCY,
             product_data: {
               name: "Live ECG Vault - Pro",
-              description: "Full access to all 47 ECG rhythms, quizzes, and analysis tools",
+              description: "Full access to all 49 ECG rhythms, quizzes, and analysis tools",
             },
             unit_amount: STRIPE_CONFIG.ECG_VAULT_PRICE,
             recurring: {

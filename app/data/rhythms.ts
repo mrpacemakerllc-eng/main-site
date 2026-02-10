@@ -1,4 +1,4 @@
-export type WaveformType = 'sinus' | 'sinus_tach' | 'first_degree' | 'junctional' | 'chb' | 'mobitz1' | 'mobitz2' | 'block_2to1' | 'afib_slow' | 'afib_rvr' | 'aflutter_svr' | 'aflutter_rvr' | 'sinus_pause' | 'sinus_arrest' | 'vtach' | 'vfib' | 'nsr_pac' | 'nsr_pvc' | 'torsades' | 'sinus_arrhythmia' | 'asystole' | 'svt' | 'accel_junctional' | 'junctional_tach' | 'wap' | 'mat' | 'atrial_tach' | 'ivr' | 'aivr' | 'v_bigeminy' | 'v_trigeminy' | 'paced_aai' | 'paced_vvi' | 'paced_ddd' | 'failure_capture_a' | 'failure_capture_v' | 'undersensing_a' | 'undersensing_v' | 'oversensing_a' | 'oversensing_v' | 'nsvt' | 'couplet' | 'wpw' | 'nsr_pjc' | 'blocked_pac' | 'lbbb' | 'rbbb';
+export type WaveformType = 'sinus' | 'sinus_tach' | 'first_degree' | 'junctional' | 'chb' | 'mobitz1' | 'mobitz2' | 'block_2to1' | 'afib_slow' | 'afib_nvr' | 'afib_rvr' | 'aflutter_svr' | 'aflutter_rvr' | 'sinus_pause' | 'sinus_arrest' | 'vtach' | 'vfib' | 'nsr_pac' | 'nsr_pvc' | 'torsades' | 'sinus_arrhythmia' | 'asystole' | 'svt' | 'accel_junctional' | 'junctional_tach' | 'wap' | 'mat' | 'atrial_tach' | 'ivr' | 'aivr' | 'v_bigeminy' | 'v_trigeminy' | 'paced_aai' | 'paced_vvi' | 'paced_ddd' | 'failure_capture_a' | 'failure_capture_v' | 'undersensing_a' | 'undersensing_v' | 'oversensing_a' | 'oversensing_v' | 'nsvt' | 'couplet' | 'wpw' | 'nsr_pjc' | 'blocked_pac' | 'lbbb' | 'rbbb';
 
 export interface Rhythm {
   id: string;
@@ -11,6 +11,7 @@ export interface Rhythm {
   pacingIndication: boolean;
   premium: boolean; // true = requires subscription
   leadLabel?: string; // Lead label to display (default: "Lead II")
+  guidelineRef?: { title: string; url: string }; // Optional guideline reference link
 }
 
 // Free rhythm IDs (available without subscription)
@@ -27,12 +28,12 @@ export const sinusBradycardia: Rhythm = {
   id: 'sinus-brady',
   name: 'Sinus Bradycardia',
   rate: 45,
-  description: 'Regular rhythm, rate < 60 bpm, normal P waves before each QRS',
+  description: 'Regular rhythm, rate < 50 bpm, normal P waves before each QRS',
   waveform: 'sinus',
   pacingIndication: true,
   premium: false, // FREE
   explanation: `WHAT IS IT
-A normal sinus rhythm running slower than 60 bpm. The SA node is firing correctly — just at a reduced rate.
+A normal sinus rhythm running slower than 50 bpm. The SA node is firing correctly — just at a reduced rate. (Note: The 2018 HRS guidelines updated the lower limit of normal from 60 to 50 bpm, so sinus bradycardia is now defined as <50 bpm rather than the older <60 bpm cutoff.)
 
 RECOGNIZE IT
 • Regularity: Regular
@@ -40,7 +41,14 @@ RECOGNIZE IT
 • Upright P wave before every QRS (1:1 conduction)
 • PR interval 0.12–0.20 sec
 • Narrow QRS (<0.12 sec)
-• Rate < 60 bpm
+• Rate < 50 bpm (per 2018 HRS bradycardia guidelines)
+
+IMPORTANT CLINICAL NOTE — BRADYCARDIA DURING SLEEP
+Slow heart rates that occur during sleep do NOT typically require a pacemaker per guidelines. Here's why this matters:
+
+During sleep, the "rest and digest" part of the nervous system (parasympathetic/vagal tone) naturally slows the heart rate. This is normal and expected — the body doesn't need as much blood flow when you're sleeping. A heart rate of 40-50 bpm during deep sleep in an otherwise healthy person is NOT abnormal or dangerous.
+
+What IS concerning: slow heart rates while AWAKE that cause symptoms like fainting, near-fainting, fatigue, or inability to exercise. The key is whether the slow rate causes problems when the body actually needs adequate blood flow.
 
 HOW TO TELL IT APART
 • vs Junctional Escape → Junctional has NO upright P waves and rate 40–60
@@ -55,7 +63,7 @@ CAUSES
 TREATMENT
 • Asymptomatic → no treatment needed
 • Symptomatic → atropine 0.5 mg IV (first-line)
-• Refractory → transcutaneous pacing as bridge
+• If medications don't work → temporary external pacing as a bridge
 
 PACING — CLASS I INDICATION IF SYMPTOMATIC
 • Symptomatic bradycardia with documented symptom-rhythm correlation
@@ -71,12 +79,18 @@ export const normalSinusRhythm: Rhythm = {
   id: 'nsr',
   name: 'Normal Sinus Rhythm',
   rate: 72,
-  description: 'Regular rhythm, rate 60-100 bpm, normal P waves',
+  description: 'Regular rhythm, rate 50-100 bpm, normal P waves',
   waveform: 'sinus',
   pacingIndication: false,
   premium: false, // FREE
+  guidelineRef: {
+    title: '2018 ACC/AHA/HRS Bradycardia Guidelines',
+    url: 'https://www.ahajournals.org/doi/10.1161/CIR.0000000000000628'
+  },
   explanation: `WHAT IS IT
-The gold standard — a healthy heart rhythm originating from the SA node at 60–100 bpm.
+The gold standard — a healthy heart rhythm originating from the SA node at 50–100 bpm.
+
+NOTE ON HEART RATE RANGE: The 2018 HRS bradycardia guidelines updated the lower limit of normal from 60 bpm to 50 bpm. You may still see older textbooks and resources citing 60-100 bpm, but current guidelines recognize that rates of 50-60 bpm are normal in many healthy individuals.
 
 RECOGNIZE IT
 • Regularity: Regular
@@ -84,10 +98,10 @@ RECOGNIZE IT
 • Upright P wave before every QRS
 • PR interval 0.12–0.20 sec
 • Narrow QRS (<0.12 sec)
-• Rate 60–100 bpm
+• Rate 50–100 bpm (per 2018 HRS bradycardia guidelines)
 
 HOW TO TELL IT APART
-• vs Sinus Brady → Same morphology, just rate < 60
+• vs Sinus Brady → Same morphology, just rate < 50
 • vs Sinus Tach → Same morphology, just rate > 100
 • vs Accelerated Junctional → Junctional has no upright P waves
 
@@ -117,6 +131,19 @@ RECOGNIZE IT
 • PR interval 0.12–0.20 sec
 • Narrow QRS (<0.12 sec)
 • Rate 100–180 bpm with gradual onset and offset
+
+AGE-PREDICTED MAXIMUM HEART RATE
+How fast can the heart naturally beat at maximum effort? The anticipated maximum heart rate depends on age, using the formula:
+
+220 - age = maximum age-predicted heart rate
+
+For example:
+• 20-year-old: max predicted HR = 200 bpm
+• 40-year-old: max predicted HR = 180 bpm
+• 60-year-old: max predicted HR = 160 bpm
+• 80-year-old: max predicted HR = 140 bpm
+
+Why this matters: If you see "sinus tachycardia" significantly above the age-predicted max, question the diagnosis. A 70-year-old with a rate of 180 bpm is likely NOT in sinus tach — consider atrial flutter with 2:1 conduction, SVT, or another arrhythmia. The SA node simply can't fire that fast in most older patients.
 
 HOW TO TELL IT APART
 • vs SVT → SVT is abrupt on/off, rate usually > 150, P waves hidden. Sinus tach has gradual acceleration and visible P waves
@@ -152,6 +179,13 @@ export const firstDegreeBlock: Rhythm = {
   premium: true,
   explanation: `WHAT IS IT
 Every atrial impulse conducts to the ventricles — it just takes longer than normal. The AV node is slow, not blocked.
+
+CLINICAL NOTE — "FIRST DEGREE BLOCK" IS A MISNOMER
+This terminology is widely considered a misnomer in electrophysiology. Here's why:
+
+The word "block" implies something is blocked — but in first degree "block," NOTHING is actually blocked. Every single P wave successfully conducts to the ventricles; the conduction is just slower than normal.
+
+Many clinicians prefer the term "prolonged PR interval" or "slow AV conduction" when discussing with patients. Why? Because telling a patient they have "heart block" can cause unnecessary anxiety when this finding is usually benign and requires no intervention. The PR interval is simply longer than the normal 200ms cutoff.
 
 RECOGNIZE IT
 • Regularity: Regular
@@ -252,7 +286,7 @@ RECOGNIZE IT
 
 HOW TO TELL IT APART
 • vs Sinus Brady → Sinus brady has upright P waves before each QRS. Junctional has no upright P waves.
-• vs Accelerated Junctional → Same morphology, but accelerated junctional runs 60–100 bpm
+• vs Accelerated Junctional → Same morphology, but accelerated junctional runs 60–100 bpm (junctional rates use the traditional cutoffs)
 • vs IVR → IVR has WIDE QRS (ventricular origin). Junctional has narrow QRS.
 
 CAUSES
@@ -262,7 +296,7 @@ CAUSES
 • Inferior MI
 
 TREATMENT
-• Assess hemodynamic stability
+• Check if blood pressure and circulation are adequate
 • Atropine 0.5 mg IV if symptomatic
 • Transcutaneous pacing if atropine fails
 • Treat underlying cause
@@ -271,7 +305,7 @@ PACING — CLASS I IF SYMPTOMATIC
 Junctional escape at 40–60 bpm often causes symptoms. If symptomatic, permanent pacing is indicated. This rhythm tells you the SA node has failed.
 
 KEY TAKEAWAY
-Know the pacemaker hierarchy: SA node (60–100) → Junction (40–60) → Ventricle (20–40). Junctional escape means the top pacemaker failed and the backup kicked in. Never suppress an escape rhythm — it's the only thing keeping the patient alive.`
+Know the pacemaker hierarchy: SA node (50–100, though traditional teaching said 60-100) → Junction (40–60) → Ventricle (20–40). Junctional escape means the top pacemaker failed and the backup kicked in. Never suppress an escape rhythm — it's the only thing keeping the patient alive.`
 };
 
 // Complete Heart Block (3rd Degree AV Block) - CLASSIC pacing indication
@@ -284,6 +318,10 @@ export const completeHeartBlock: Rhythm = {
   waveform: 'chb',
   pacingIndication: true,
   premium: true,
+  guidelineRef: {
+    title: '2018 ACC/AHA/HRS Bradycardia Guidelines',
+    url: 'https://www.ahajournals.org/doi/10.1161/CIR.0000000000000628'
+  },
   explanation: `WHAT IS IT
 The electrical connection between the atria and ventricles is completely severed. The atria and ventricles beat independently — no atrial impulse reaches the ventricles. A slow escape rhythm keeps the patient alive.
 
@@ -314,7 +352,18 @@ TREATMENT
 • Transvenous pacing as bridge to permanent pacemaker
 
 PACING — CLASS I ABSOLUTE INDICATION
-Complete heart block is a Class I indication for permanent pacing per HRS guidelines, even if asymptomatic, due to the risk of hemodynamic compromise and sudden death. This is one of the strongest pacing indications in cardiology.
+Complete heart block is a Class I indication (strongest recommendation) for permanent pacing per HRS guidelines, even if the patient feels fine, due to the risk of the heart not pumping enough blood and sudden death. This is one of the strongest pacing indications in cardiology.
+
+CLINICAL PEARL — STABLE VS URGENT COMPLETE HEART BLOCK
+Not all complete heart block presentations are emergencies — understanding the spectrum is important:
+
+STABLE CHB (Not immediately dangerous):
+Some patients present in complete heart block but their body is managing okay. They may have a reliable backup rhythm (junctional escape) that's keeping blood flowing adequately. These patients still need a permanent pacemaker, but there's time to plan the procedure rather than rushing.
+
+URGENT CHB (Needs immediate attention):
+1. CHB with FAINTING: If the patient has passed out (syncope) because of the heart block, this becomes urgent. Fainting means the backup rhythm was too slow or unreliable to get enough blood to the brain.
+
+2. CHB with HIGH BLOOD PRESSURE: This is a warning sign that many don't recognize. High blood pressure in CHB is often the body's attempt to compensate — it's squeezing the blood vessels tighter to try to maintain blood flow despite the slow heart rate. Think of it like the body "working overtime" to keep up. The danger: if the blood pressure suddenly drops, the patient can crash quickly because they were barely holding on. These patients need close monitoring.
 
 KEY TAKEAWAY
 Two hallmarks: (1) P waves and QRS have NO relationship, and (2) the atrial rate is faster than the ventricular rate. Wide QRS escape is more dangerous than narrow — it means the block is below the AV node and the escape is unreliable. This patient needs a pacemaker yesterday.`
@@ -330,6 +379,10 @@ export const mobitzType2: Rhythm = {
   waveform: 'mobitz2',
   pacingIndication: true,
   premium: true,
+  guidelineRef: {
+    title: '2018 ACC/AHA/HRS Bradycardia Guidelines',
+    url: 'https://www.ahajournals.org/doi/10.1161/CIR.0000000000000628'
+  },
   explanation: `WHAT IS IT
 Second degree AV block where beats drop suddenly and without warning. The PR interval stays constant in conducted beats — then a QRS just doesn't show up. The block is below the AV node (His-Purkinje system) and is unreliable.
 
@@ -423,17 +476,17 @@ export const afibSlowResponse: Rhythm = {
   pacingIndication: true,
   premium: true,
   explanation: `WHAT IS IT
-Atrial fibrillation with a ventricular rate below 60 bpm. The atria are fibrillating chaotically, but the AV node is letting very few impulses through — either because of disease or medications.
+Atrial fibrillation with a ventricular rate below 50 bpm. The atria are fibrillating chaotically, but the AV node is letting very few impulses through — either because of disease or medications. (Note: Using <50 bpm to align with the 2018 HRS guidelines that define the lower limit of normal as 50 bpm.)
 
 RECOGNIZE IT
 • Regularity: Irregularly irregular
 • Irregularly irregular R-R intervals — the hallmark of AFib
 • No P waves — fibrillatory, chaotic baseline between QRS complexes
-• Ventricular rate < 60 bpm
+• Ventricular rate < 50 bpm
 • Narrow QRS (unless concurrent bundle branch block)
 
 HOW TO TELL IT APART
-• vs AFib RVR → Same rhythm, different rate. Slow = < 60, RVR = > 100.
+• vs AFib RVR → Same rhythm, different rate. Slow = < 50, RVR = > 100.
 • vs Sinus Brady → Sinus brady is REGULAR with visible P waves. Slow AFib is IRREGULAR with no P waves.
 • vs Junctional Escape → Junctional is REGULAR. AFib slow is always IRREGULAR.
 
@@ -454,6 +507,50 @@ If the patient swings between fast AFib and slow rates, pacing is needed so you 
 
 KEY TAKEAWAY
 Two questions with slow AFib: (1) Is it from medications? If so, reduce the dose. (2) Is it tachy-brady? If the patient alternates between fast and slow AFib, they need a pacemaker to allow safe rate control.`
+};
+
+// AFib with Normal Ventricular Response (Controlled)
+export const afibNormalResponse: Rhythm = {
+  id: 'afib-nvr',
+  name: 'AFib with Normal Ventricular Response',
+  rate: 78,
+  description: 'Irregularly irregular rhythm, no P waves, controlled ventricular rate 50-100 bpm',
+  waveform: 'afib_nvr',
+  pacingIndication: false,
+  premium: true,
+  explanation: `WHAT IS IT
+Atrial fibrillation with a ventricular rate in the normal range (50-100 bpm). The atria are fibrillating chaotically, but the AV node is conducting at a controlled rate — either naturally or due to rate-control medications.
+
+RECOGNIZE IT
+• Regularity: Irregularly irregular
+• Irregularly irregular R-R intervals — the hallmark of AFib
+• No P waves — fibrillatory, chaotic baseline between QRS complexes
+• Ventricular rate 50-100 bpm (controlled)
+• Narrow QRS (unless concurrent bundle branch block)
+
+HOW TO TELL IT APART
+• vs AFib Slow → Same rhythm but slow response is < 50 bpm
+• vs AFib RVR → Same rhythm but RVR is > 100 bpm
+• vs NSR → NSR is REGULAR with visible P waves. AFib NVR is IRREGULAR with no P waves
+• vs Sinus Arrhythmia → Sinus arrhythmia has P waves and varies with breathing. AFib has no P waves
+
+CAUSES
+• Well-controlled AFib on rate-control medications
+• Beta-blockers, calcium channel blockers (diltiazem, verapamil)
+• Digoxin
+• Some patients have naturally controlled AFib
+
+TREATMENT
+• Continue rate-control medications if adequate
+• Anticoagulation for stroke prevention (CHA₂DS₂-VASc score)
+• Consider rhythm control (cardioversion, ablation) in appropriate patients
+• Monitor for breakthrough RVR or over-control to slow response
+
+PACING — NOT INDICATED
+Well-controlled AFib with normal rate does not require pacing. However, if rate control causes symptomatic bradycardia, consider pacemaker to allow continued medical therapy.
+
+KEY TAKEAWAY
+This is the goal of rate control — AFib with a normal ventricular response. The rhythm is still irregularly irregular with no P waves, but the rate is 50-100 bpm. Don't be fooled by the normal rate — it's still AFib. Always check for anticoagulation needs.`
 };
 
 // Sinus Pause
@@ -493,6 +590,28 @@ TREATMENT
 
 PACING — CLASS I IF SYMPTOMATIC
 Pacing indicated for symptomatic pauses > 3 seconds or syncope correlated with pauses. Pauses > 3 seconds while awake are always abnormal.
+
+CLINICAL PEARL — WHEN IS A PAUSE A PROBLEM?
+Understanding pause thresholds helps distinguish dangerous pauses from harmless variations:
+
+• Sinus pause > 3 seconds while awake = generally considered a PROBLEM
+  Three seconds is long enough to cause symptoms (lightheadedness, near-fainting, or actually passing out) and indicates the SA node isn't working properly.
+
+• In atrial fibrillation, pause > 5 seconds = a PROBLEM
+  AFib patients naturally have more variation in their rhythm (it's "irregularly irregular"), so the threshold for concern is higher. A 5-second pause in AFib suggests either too much rate-control medication or disease of the AV node itself.
+
+Note: Pauses during sleep are evaluated differently — longer pauses may be tolerated without symptoms because the body needs less blood flow when you're sleeping and inactive.
+
+HOW TO MEASURE THE PAUSE
+At standard ECG speed (25 mm/sec), count LARGE boxes first for speed, then use small boxes to fine-tune:
+• 1 large box = 0.2 seconds (200 ms)
+• 1 small box = 0.04 seconds (40 ms)
+• 3-second pause = 15 large boxes
+• 5-second pause = 25 large boxes
+
+Quick method: Count the large boxes in the pause and multiply by 0.2 to get seconds. Use small boxes to add precision (each small box adds 0.04 sec).
+
+Example from this strip: The pause is about 26 large boxes. 26 × 0.2 sec = 5.2 seconds — that's a significant pause!
 
 KEY TAKEAWAY
 Pause vs Arrest comes down to math. Measure the pause and divide by the normal P-P interval. If it's a clean multiple (2.0×, 3.0×), it's arrest. If it's not (1.7×, 2.3×), it's a pause. The SA node reset instead of missing entire cycles.`
@@ -535,8 +654,22 @@ TREATMENT
 PACING — CLASS I IF SYMPTOMATIC
 Symptomatic sinus arrest with syncope or pauses > 3 seconds while awake requires permanent pacing.
 
+HOW TO MEASURE THE PAUSE
+At standard ECG speed (25 mm/sec), count LARGE boxes first:
+• 1 large box = 0.2 seconds (200 ms)
+• 1 small box = 0.04 seconds (40 ms)
+
+To confirm it's ARREST: measure the normal R-R interval, then measure the pause. Divide pause ÷ R-R. If it's a whole number (2, 3, 4...), it's arrest.
+
+Example from this strip:
+• Normal R-R at 55 bpm = ~5.5 large boxes (1.1 sec)
+• The pause = 11 large boxes (2.2 sec)
+• 11 ÷ 5.5 = 2.0 exactly → ARREST (2 missed cycles)
+
+This is classic sinus arrest: the SA node failed for exactly 2 complete cycles, then resumed. The math is clean.
+
 KEY TAKEAWAY
-Sinus arrest = the SA node pauses for exactly 2 (or more) full cycles. The math is clean — pause ÷ P-P = whole number. The key difference between pause and arrest is whether the pause is an exact multiple of the P-P interval.`
+Sinus arrest = the SA node stops for exactly 2 (or more) full cycles. The math is clean — pause ÷ R-R = whole number (2, 3, 4). If it's not a whole number (like 1.7 or 2.3), that's a sinus pause instead.`
 };
 
 // Ventricular Tachycardia (VT)
@@ -618,7 +751,7 @@ TREATMENT
 • DEFIBRILLATE IMMEDIATELY — this is a shockable rhythm
 • CPR between shocks (high-quality, minimal interruptions)
 • Epinephrine 1 mg IV every 3–5 minutes
-• Amiodarone 300 mg IV for refractory VFib
+• Amiodarone 300 mg IV if VFib persists despite shocks
 • Identify and treat reversible causes (H's and T's)
 
 PACING — NOT APPLICABLE
@@ -656,33 +789,32 @@ HOW TO TELL IT APART
 • vs Polymorphic VT with normal QT → If QT is normal, it's polymorphic VT (treat like VT). If QT is prolonged, it's Torsades (different treatment!).
 
 CAUSES
-• QT-prolonging medications (antiarrhythmics, antibiotics, antipsychotics)
-• Electrolyte imbalances: hypokalemia, hypomagnesemia, hypocalcemia
-• Congenital long QT syndrome
-• Bradycardia (longer pauses = longer QT)
+• QT-prolonging medications — this is the MOST COMMON cause
+  The typical scenario involves taking MULTIPLE medications that each prolong the QT interval. Examples include certain heart rhythm drugs (sotalol, dofetilide), certain antibiotics (fluoroquinolones like levofloxacin), antipsychotic medications, and methadone. When a patient is on several of these drugs at once, the QT-prolonging effects add up. Add in low electrolytes, and you have a recipe for Torsades.
+• Electrolyte imbalances: low potassium, low magnesium, low calcium
+  These minerals are essential for normal heart electrical activity. When they're low, the heart takes longer to "reset" after each beat (prolonged repolarization), which increases Torsades risk.
+• Congenital long QT syndrome (inherited genetic conditions affecting heart ion channels)
+• Bradycardia (slow heart rate = longer time between beats = longer QT interval)
 
-TREATMENT — DIFFERENT FROM STANDARD VT
-1. DEFIBRILLATE if pulseless or sustained — this is a shockable rhythm!
-2. IV Magnesium 2g push — first line for stable patients, give IMMEDIATELY
-3. Overdrive pacing at 90–110 bpm (shortens QT interval)
+TREATMENT APPROACH — DIFFERENT FROM STANDARD VT
+Torsades requires a different approach than monomorphic VT:
+
+1. DEFIBRILLATION if pulseless or sustained — this is a shockable rhythm
+2. Magnesium replacement — target Mg level > 3.0 mEq/L
+   IV Magnesium 2g push is typically first-line for stable patients. Higher Mg levels help stabilize the myocardium. This is different from standard VT where magnesium isn't first-line.
+3. Overdrive pacing at 90–110 bpm
+   This works because faster heart rates = shorter QT intervals. By pacing faster, you shorten the vulnerable repolarization period and suppress the Torsades.
 4. Isoproterenol IV (bridge to pacing)
 5. STOP all QT-prolonging medications
 6. Correct K+ to > 4.0 mEq/L
 
 PACING — OVERDRIVE PACING IS THERAPEUTIC
-┌────────────────────────────────────────────────────────────┐
-│  Temporary overdrive pacing at 90–110 bpm shortens the    │
-│  QT interval and SUPPRESSES Torsades.                     │
-│                                                           │
-│  This is one of the few arrhythmias where pacing is       │
-│  part of ACUTE treatment — similar to post-AV node        │
-│  ablation pacing for rate support.                        │
-│                                                           │
-│  Faster heart rate = shorter QT = prevents Torsades       │
-└────────────────────────────────────────────────────────────┘
+Temporary overdrive pacing at 90–110 bpm shortens the QT interval and SUPPRESSES Torsades. This is one of the few arrhythmias where pacing is part of ACUTE treatment — similar to post-AV node ablation pacing for rate support.
+
+Faster heart rate = shorter QT = prevents Torsades
 
 DEFIBRILLATION
-If the patient is pulseless or hemodynamically unstable, DEFIBRILLATE immediately. Torsades is a shockable rhythm. Don't waste time — shock first, then give magnesium and set up pacing.
+If the patient has no pulse or is crashing (low blood pressure, altered consciousness), DEFIBRILLATE immediately. Torsades is a shockable rhythm. Don't waste time — shock first, then give magnesium and set up pacing.
 
 KEY TAKEAWAY
 Torsades is NOT regular VT — avoid amiodarone (it prolongs QT and can worsen the arrhythmia). Magnesium is first-line for stable patients. Overdrive pacing at 90-110 bpm is therapeutic. DEFIBRILLATE if pulseless or sustained. The treatment approach differs from standard VT.`
@@ -718,6 +850,13 @@ CAUSES
 • Heart failure, COPD, hyperthyroidism
 • Frequent PACs may herald atrial fibrillation
 
+CLINICAL PEARL — PACs FROM THE PULMONARY VEINS & AF CONNECTION
+Why do PACs matter? PACs — especially those originating from the left atrial pulmonary veins — can be precursors for atrial fibrillation.
+
+Here's the connection: The pulmonary veins (where oxygenated blood returns from the lungs to the left atrium) contain myocardial sleeve tissue that can be electrically active. Ectopic foci in these sleeves can fire rapidly and trigger AFib. This is why pulmonary vein isolation (PVI) is the cornerstone of AF ablation — it electrically isolates these triggers from the rest of the heart.
+
+A patient with frequent PACs and a PV origin pattern on the ECG may benefit from EP evaluation, especially if they have other AFib risk factors.
+
 TREATMENT
 • Usually none — PACs are benign in most patients
 • Reduce caffeine, alcohol, stress
@@ -740,7 +879,7 @@ export const blockedPAC: Rhythm = {
   pacingIndication: false,
   premium: true,
   explanation: `WHAT IS IT
-A premature atrial contraction that occurs so early that the AV node is still refractory and cannot conduct the impulse to the ventricles. You see a P wave but NO QRS follows it.
+A premature atrial contraction that occurs so early that the AV node hasn't recovered yet and cannot pass the impulse to the ventricles. You see a P wave but NO QRS follows it.
 
 RECOGNIZE IT
 • Regularity: Regularly irregular (pauses from blocked beats)
@@ -757,7 +896,7 @@ HOW TO TELL IT APART
 
 CAUSES
 • Same as conducted PACs: caffeine, stress, electrolytes
-• Very early coupling interval (PAC fires during AV node refractory period)
+• Very early timing (PAC fires before the AV node has recovered from the previous beat)
 • Often seen with frequent PACs
 
 CLINICAL SIGNIFICANCE
@@ -766,7 +905,7 @@ CLINICAL SIGNIFICANCE
 • May be misdiagnosed as sinus pause if P wave hidden in T wave
 • Look carefully at the T wave morphology - is it different from other T waves?
 
-Clinical Pearl: When you see a pause, always examine the T wave before the pause. If it looks different (peaked, notched, or taller than other T waves), a PAC is likely hiding in there. The P wave + refractory AV node = blocked PAC.`
+Clinical Pearl: When you see a pause, always examine the T wave before the pause. If it looks different (peaked, notched, or taller than other T waves), a PAC is likely hiding in there. The early P wave arrived before the AV node recovered = blocked PAC.`
 };
 
 // NSR with PJC (Premature Junctional Contraction)
@@ -787,9 +926,9 @@ RECOGNIZE IT
 • Early beat appears sooner than expected
 • Narrow QRS (same as sinus beats - uses normal conduction system)
 • P wave is either:
-  - Absent (hidden in QRS)
-  - Inverted in lead II (retrograde conduction to atria)
-  - Appears just before or just after the QRS
+    ◦ Absent (hidden in QRS)
+    ◦ Inverted in lead II (retrograde conduction to atria)
+    ◦ Appears just before or just after the QRS
 • Incomplete compensatory pause
 
 HOW TO TELL IT APART
@@ -843,11 +982,28 @@ CAUSES
 • Ischemia, heart failure, cardiomyopathy
 • Medications, hyperthyroidism
 
+CLINICAL PEARL — PVCs AND HEART RATE MONITORS
+Why do PVC patients sometimes show falsely low heart rates on monitors?
+
+When a PVC fires, it often comes so early that the ventricles haven't fully filled with blood yet. The resulting contraction produces a weak or absent peripheral pulse — the heart beats, but not enough blood is ejected to register as a pulse at the finger (where pulse oximeters measure) or wrist (where fitness trackers measure).
+
+This means non-invasive heart rate monitors can show erroneously LOW readings in patients with frequent PVCs. The monitor misses the PVC beats because they don't generate a detectable pulse wave. This is important to understand when interpreting heart rate data in PVC patients.
+
 TREATMENT
 • Isolated PVCs → usually no treatment
 • Symptomatic → beta-blockers
-• Frequent PVCs (> 10–15% burden) → evaluate for PVC-induced cardiomyopathy, consider ablation
+• Frequent PVCs (>10% burden OR >20,000/24 hours) → warrants intervention (AAD +/- ablation)
+• PVC ablation is particularly effective if unifocal or bifocal (1-2 dominant PVC morphologies)
 • PVCs in structural heart disease → ICD evaluation
+
+WHEN DOES PVC BURDEN BECOME SIGNIFICANT?
+Guidelines generally consider PVCs significant when they exceed these thresholds:
+• >10% PVC burden (meaning >10% of all heartbeats are PVCs)
+• OR >20,000 PVCs per 24-hour Holter monitoring period
+
+At these levels, PVCs can potentially lead to PVC-induced cardiomyopathy — a weakening of the heart muscle caused by the chronic inefficient contractions. The myocardium essentially gets "tired" from the abnormal activation pattern.
+
+When intervention is considered, options typically include antiarrhythmic drug (AAD) therapy and/or catheter ablation. Ablation tends to be most effective when there are only 1-2 dominant PVC morphologies (unifocal or bifocal), meaning the PVCs are coming from one or two specific spots rather than many locations.
 
 PACING — NOT INDICATED (ICD MAY BE)
 PVCs themselves don't need pacing. But frequent PVCs with reduced EF or structural heart disease may warrant ICD evaluation.
@@ -910,6 +1066,10 @@ export const aflutterRVR: Rhythm = {
   waveform: 'aflutter_rvr',
   pacingIndication: false,
   premium: true,
+  guidelineRef: {
+    title: '2015 ACC/AHA/HRS SVT Guidelines',
+    url: 'https://www.ahajournals.org/doi/10.1161/cir.0000000000000311'
+  },
   explanation: `WHAT IS IT
 Atrial flutter with 2:1 conduction — the most common and most missed form of flutter. The atria flutter at ~300/min and every other impulse conducts, producing a ventricular rate of ~150 bpm.
 
@@ -935,8 +1095,19 @@ TREATMENT
 • Rate control: beta-blockers, CCBs, or digoxin
 • Cardioversion (electrical or pharmacologic with ibutilide)
 • Adenosine can transiently increase block to reveal flutter waves (diagnostic, not therapeutic)
-• Catheter ablation is highly effective (cure rate > 90%)
+• Catheter ablation is highly effective (success rate > 90%)
 • Anticoagulation for stroke prevention
+
+TYPICAL FLUTTER — RECOGNIZING THE CTI-DEPENDENT MECHANISM
+Typical atrial flutter has a specific anatomical circuit: it rotates around the tricuspid annulus and depends on the cavotricuspid isthmus (CTI) — a band of tissue between the inferior vena cava and the tricuspid valve.
+
+How to recognize typical flutter on ECG:
+• Look at V1 and the inferior leads (II, III, aVF)
+• DISCORDANT polarity (opposite directions) between V1 and inferior leads suggests typical RA CTI-dependent flutter
+• Counter-clockwise typical flutter: negative (inverted) flutter waves in inferior leads, positive in V1
+• Clockwise typical flutter: positive flutter waves in inferior leads, negative in V1
+
+Why this matters: Typical flutter is highly amenable to catheter ablation. Guidelines consider ablation a CLASS I recommendation for typical flutter — meaning it's generally preferred over long-term antiarrhythmic drug therapy. Ablation success rates exceed 90% for typical CTI-dependent flutter.
 
 PACING — NOT INDICATED
 
@@ -953,6 +1124,10 @@ export const afibRVR: Rhythm = {
   waveform: 'afib_rvr',
   pacingIndication: false,
   premium: true,
+  guidelineRef: {
+    title: '2023 ACC/AHA/ACCP/HRS AF Guidelines',
+    url: 'https://www.ahajournals.org/doi/10.1161/CIR.0000000000001193'
+  },
   explanation: `WHAT IS IT
 Atrial fibrillation with a fast ventricular rate (> 100 bpm). The atria are fibrillating chaotically and the AV node is letting too many impulses through, driving the ventricles fast.
 
@@ -964,7 +1139,7 @@ RECOGNIZE IT
 • Narrow QRS unless bundle branch block or rate-related aberrancy
 
 HOW TO TELL IT APART
-• vs AFib Slow → Same irregular rhythm and absent P waves, just rate < 60.
+• vs AFib Slow → Same irregular rhythm and absent P waves, just rate < 50.
 • vs MAT → MAT has discrete P waves (at least 3 different morphologies). AFib has NO P waves.
 • vs Atrial Flutter → Flutter is regular with organized sawtooth. AFib is irregular with chaotic baseline.
 
@@ -976,13 +1151,29 @@ CAUSES
 • Obstructive sleep apnea
 
 TREATMENT
-• Hemodynamically unstable → synchronized cardioversion
+• If blood pressure is dangerously low or patient is unstable → synchronized cardioversion
 • Stable → rate control first:
   — IV diltiazem or metoprolol for acute control
-  — Digoxin if heart failure present
+  — Digoxin if heart failure present OR if borderline low BP (digoxin doesn't drop BP like CCBs/beta blockers)
 • Rhythm control: amiodarone, flecainide, cardioversion
 • Anticoagulation: assess CHA₂DS₂-VASc score for stroke risk
 • Long-term: rate vs rhythm control strategy
+
+IN-HOSPITAL AF RVR MANAGEMENT
+In the hospital setting, rapid AFib is typically approached as follows:
+1. Rate control with AV nodal blockade — beta blockers (metoprolol, esmolol) or calcium channel blockers (diltiazem)
+2. Amiodarone may be added for additional rate control and/or rhythm control
+3. Special consideration for low blood pressure: Digoxin is useful when BP is borderline low because unlike beta blockers and CCBs, digoxin slows the heart rate without significantly dropping blood pressure. It works through vagal enhancement rather than negative inotropy.
+
+UNDERSTANDING MODERN AF MANAGEMENT
+Current guidelines have shifted toward earlier rhythm control. First-line AF management typically involves:
+• Attempts at RHYTHM CONTROL (AF ablation +/- antiarrhythmic drugs) — particularly in symptomatic patients or those with heart failure
+• Oral anticoagulation (OAC) for stroke prevention — the decision is based on CHA₂DS₂-VASc score
+• Left atrial appendage occlusion (LAAO) devices may be considered in patients who cannot take long-term anticoagulation
+
+AF ablation is particularly appropriate to consider when:
+• The patient has symptoms attributable to AFib (palpitations, fatigue, exercise intolerance)
+• There is concomitant heart failure (AFib and HF create a vicious cycle — each makes the other worse)
 
 PACING — NOT INDICATED FOR RVR
 AFib RVR needs rate control, not pacing. However, if rate-control medications are later pushed too far and cause bradycardia, see AFib with Slow Response.
@@ -1009,7 +1200,7 @@ RECOGNIZE IT
 • PR interval constant (0.12–0.20 sec)
 • Narrow QRS
 • R-R intervals vary by > 0.16 sec or > 10%
-• Rate is within normal range overall (60–100 bpm)
+• Rate is within normal range overall (50–100 bpm)
 • Variation follows a smooth respiratory cycle
 
 HOW TO TELL IT APART
@@ -1030,7 +1221,12 @@ PACING — NOT INDICATED
 This is normal. Presence of sinus arrhythmia actually indicates good vagal tone.
 
 KEY TAKEAWAY
-The P waves all look the same — only the spacing changes. If someone calls you about an "irregular rhythm" and the P waves are normal, check if it tracks with breathing. Sinus arrhythmia is the healthy irregular rhythm.`
+Sinus arrhythmia is the "healthy irregular rhythm" — here's how to recognize it:
+• The P waves all look the SAME (same morphology)
+• The PR interval stays the SAME
+• Only the R-R intervals (the spacing between beats) varies
+
+This is different from other irregular rhythms where the P waves change shape (WAP, MAT) or disappear entirely (AFib). Sinus arrhythmia means the SA node is still in charge — it's just modulated by the respiratory cycle. This is actually a sign of good cardiovascular health and intact autonomic nervous system function.`
 };
 
 // Asystole - cardiac arrest rhythm
@@ -1089,6 +1285,10 @@ export const svt: Rhythm = {
   waveform: 'svt',
   pacingIndication: false,
   premium: true,
+  guidelineRef: {
+    title: '2015 ACC/AHA/HRS SVT Guidelines',
+    url: 'https://www.ahajournals.org/doi/10.1161/cir.0000000000000311'
+  },
   explanation: `WHAT IS IT
 A rapid, regular tachycardia originating above the ventricles, most commonly from a reentrant circuit involving the AV node (AVNRT) or an accessory pathway (AVRT). Turns on and off abruptly like a light switch.
 
@@ -1116,12 +1316,28 @@ TREATMENT — STEPWISE APPROACH
 2. Adenosine 6 mg rapid IV push → if no response, 12 mg → if no response, 12 mg again
 3. If unstable: synchronized cardioversion
 4. Rate control: diltiazem or beta-blockers for recurrent episodes
-5. Catheter ablation: curative (> 95% success rate)
+5. Catheter ablation: curative — CLASS I indication to consider
+
+AVNRT/AVRT vs ATRIAL TACHYCARDIA — THE KEY DIFFERENCE
+Understanding why some SVTs terminate with adenosine and others don't:
+
+AV NODE DEPENDENT rhythms (AVNRT and AVRT):
+These rhythms REQUIRE the AV node as part of their circuit. AVNRT is a small reentrant loop within or around the AV node. AVRT uses an accessory pathway but still needs the AV node for the other limb of the circuit. Because the AV node is essential to maintaining these rhythms, blocking it with adenosine (or vagal maneuvers) TERMINATES the arrhythmia. The circuit breaks.
+
+AV NODE INDEPENDENT rhythms (Atrial Tachycardia):
+Atrial tachycardia originates from an ectopic focus in the atrium — it fires automatically regardless of what the AV node is doing. Adenosine will slow conduction through the AV node (temporarily slowing the ventricular rate), but the atrial focus keeps firing. Once the adenosine wears off (seconds), the rapid conduction resumes. AT doesn't terminate — it just briefly slows.
+
+ABLATION AS A CONSIDERATION (CLASS I GUIDELINE RECOMMENDATION)
+For patients with recurrent SVT, catheter ablation is generally considered a Class I option:
+• AVNRT ablation: approximately 90-95% long-term success
+• AVRT ablation: approximately 90-95% long-term success
+• Atrial tachycardia ablation: approximately 80% success
+  (AT success is lower because the ectopic focus can be harder to precisely localize, and some patients have multiple foci)
 
 PACING — NOT INDICATED
 
 KEY TAKEAWAY
-The adenosine test: adenosine will TERMINATE SVT (AVNRT/AVRT) but will only TRANSIENTLY SLOW atrial flutter/tach, revealing the underlying atrial activity. This makes adenosine both diagnostic and therapeutic. Catheter ablation is the cure.`
+The adenosine test: adenosine will TERMINATE SVT (AVNRT/AVRT) because they require the AV node to sustain the circuit. Adenosine will only TRANSIENTLY SLOW atrial flutter/tach (AT is not AV node dependent). This makes adenosine both diagnostic and therapeutic. Catheter ablation is considered definitive management.`
 };
 
 // Wolff-Parkinson-White (WPW) Pattern
@@ -1186,9 +1402,22 @@ The AV junction is firing at an enhanced rate (60–100 bpm) — faster than its
 RECOGNIZE IT
 • Regularity: Regular
 • Rate 60–100 bpm
-• P waves absent, inverted before QRS, or retrograde after QRS
 • Narrow QRS complex
 • Regular R-R intervals
+
+WHERE ARE THE P WAVES?
+In junctional rhythms, the atria are activated RETROGRADE (backwards, from AV junction up to the atria) rather than from the SA node down. This creates three possible P wave presentations:
+
+1. P waves HIDDEN IN THE QRS — most common in accelerated junctional
+   The atria and ventricles depolarize almost simultaneously, so the P wave is buried within the QRS complex and invisible.
+
+2. P waves IMMEDIATELY AFTER the QRS (within the ST segment)
+   The retrograde atrial activation happens just after ventricular depolarization. Look for a small deflection distorting the early ST segment.
+
+3. P waves INVERTED just before the QRS
+   If the junction fires and atrial conduction is slightly faster than ventricular, you may see a small inverted P wave immediately preceding the QRS.
+
+The key feature: if you can see P waves, they will be INVERTED in the inferior leads (II, III, aVF) because the electrical vector is traveling UP toward the SA node rather than down from it.
 
 HOW TO TELL IT APART
 • vs Junctional Escape → Same morphology, different rate. Escape = 40–60 bpm (backup rhythm). Accelerated = 60–100 bpm (enhanced automaticity).
@@ -1254,7 +1483,21 @@ TREATMENT
 PACING — NOT INDICATED
 
 KEY TAKEAWAY
-Junctional tachycardia screams "check the digoxin level." It's the most common rhythm associated with dig toxicity. Unlike SVT, it won't terminate with adenosine because it's an automatic focus, not a reentry circuit.`
+Junctional tachycardia screams "check the digoxin level." It's the most common rhythm associated with dig toxicity. Unlike SVT, it won't terminate with adenosine because it's an automatic focus, not a reentry circuit.
+
+DIGOXIN TOXICITY — THREE CLASSIC RHYTHM PRESENTATIONS
+Digoxin has a narrow therapeutic window, and toxicity produces characteristic arrhythmias. Recognizing these patterns is clinically important:
+
+1. AFib + Complete Heart Block with Junctional Escape
+   The atria are fibrillating chaotically (no P waves, irregular baseline), BUT the ventricular rhythm is perfectly REGULAR at 40-60 bpm. This paradox — irregular atrial activity with regular ventricular response — indicates complete AV block with a junctional escape. The digoxin has blocked the AV node while also irritating the junction.
+
+2. Paroxysmal Atrial Tachycardia with AV Block (PAT with block)
+   You see rapid, organized atrial activity (P waves at 150-250/min) but not all P waves conduct to the ventricles. The combination of enhanced atrial automaticity PLUS AV nodal block is characteristic of dig toxicity. The same drug that's speeding up the atria is slowing down the AV node.
+
+3. Bidirectional Ventricular Tachycardia
+   The QRS axis alternates beat-to-beat (the complexes point in opposite directions). This finding is nearly PATHOGNOMONIC for digoxin toxicity — if you see bidirectional VT, digoxin toxicity is the diagnosis until proven otherwise.
+
+Any of these patterns should prompt immediate evaluation of digoxin levels and electrolytes (especially potassium, which affects dig toxicity risk).`
 };
 
 // Wandering Atrial Pacemaker
@@ -1328,7 +1571,7 @@ CAUSES
 • Hypoxemia, respiratory failure
 • Theophylline toxicity
 • Electrolyte imbalances (hypokalemia, hypomagnesemia)
-• Decompensated heart failure
+• Worsening heart failure (heart failure that's gotten out of control)
 
 TREATMENT
 • Fix the lungs first — treat COPD/hypoxia/respiratory failure
@@ -1362,10 +1605,14 @@ RECOGNIZE IT
 • P waves precede each QRS (visible between beats)
 • Regular R-R intervals
 • Narrow QRS complex
-• May show "warm up" (gradual acceleration) and "cool down" (gradual slowing)
+• Classic "warm up" and "cool down" phases — gradual acceleration at onset and gradual slowing at termination
+• May occur in "salvos" — short bursts of AT that start and stop
+
+CLINICAL PEARL — THE "WARM UP / COOL DOWN" PATTERN
+Unlike reentrant rhythms (AVNRT, AVRT) that start and stop abruptly like flipping a switch, atrial tachycardia often shows gradual rate changes. This "warm up" (rate speeds up over the first few beats) and "cool down" (rate slows before terminating) is characteristic of automatic ectopic foci.
 
 HOW TO TELL IT APART
-• vs Sinus Tach → Sinus tach has normal upright P waves (same shape as baseline). Atrial tach has abnormal P waves (different shape).
+• vs Sinus Tach → Sinus tach has normal upright P waves (same shape as baseline). Atrial tach has abnormal P waves (different shape). Key: the P wave morphology is different from sinus.
 • vs SVT (AVNRT) → SVT usually hides P waves in QRS. Atrial tach shows visible abnormal P waves between beats.
 • vs MAT → MAT has 3+ different P wave shapes and is irregular. Atrial tach has ONE consistent abnormal P wave shape and is regular.
 • vs Atrial Flutter → Flutter has sawtooth pattern. Atrial tach has discrete P waves between QRS complexes.
@@ -1408,22 +1655,21 @@ RECOGNIZE IT
 • Wide, bizarre QRS (> 0.12 sec) — ventricular origin
 • No P waves
 • Regular R-R intervals
-• Very slow — patient is likely hemodynamically compromised
+• Very slow — patient likely has dangerously low blood pressure and poor circulation
 
 HOW TO TELL IVR vs AIVR (KEY DISTINCTION)
-┌────────────────────────────────────────────────────────────┐
-│  IVR (Idioventricular Rhythm)                              │
-│  • Rate: 20–40 bpm (SLOW escape)                           │
-│  • Cause: SA and AV node failure                           │
-│  • Clinical: EMERGENT — needs pacing                       │
-│  • Treatment: Pacemaker urgently                           │
-├────────────────────────────────────────────────────────────┤
-│  AIVR (Accelerated Idioventricular Rhythm)                 │
-│  • Rate: 40–100 bpm (ENHANCED, not escape)                 │
-│  • Cause: Usually reperfusion after MI                     │
-│  • Clinical: BENIGN — often a good sign                    │
-│  • Treatment: Usually none needed                          │
-└────────────────────────────────────────────────────────────┘
+
+IVR (Idioventricular Rhythm):
+• Rate: 20–40 bpm (SLOW escape)
+• Cause: SA and AV node failure
+• Clinical: EMERGENT — needs pacing
+• Treatment: Pacemaker urgently
+
+AIVR (Accelerated Idioventricular Rhythm):
+• Rate: 40–100 bpm (ENHANCED, not escape)
+• Cause: Usually reperfusion after MI
+• Clinical: BENIGN — often a good sign
+• Treatment: Usually none needed
 
 The ONLY difference is rate:
 • IVR = 20–40 bpm = Bad (escape, needs pacing)
@@ -1452,7 +1698,7 @@ PACING — CLASS I ABSOLUTE INDICATION
 IVR at 20–40 bpm means all higher pacemakers have failed. This patient needs an artificial pacemaker urgently.
 
 KEY TAKEAWAY
-Pacemaker hierarchy: SA node (60–100) → Junction (40–60) → Ventricle (20–40). IVR means you're at the bottom. Never give a drug that could suppress this escape rhythm (no amiodarone, no lidocaine). The ventricles are the patient's last lifeline until you get a pacemaker in.`
+Pacemaker hierarchy: SA node (50–100, traditionally 60-100) → Junction (40–60) → Ventricle (20–40). IVR means you're at the bottom. Never give a drug that could suppress this escape rhythm (no amiodarone, no lidocaine). The ventricles are the patient's last lifeline until you get a pacemaker in.`
 };
 
 // Accelerated Idioventricular Rhythm (AIVR)
@@ -1478,19 +1724,18 @@ RECOGNIZE IT
 • Often transient — starts and stops on its own
 
 HOW TO TELL AIVR vs IVR (KEY DISTINCTION)
-┌────────────────────────────────────────────────────────────┐
-│  AIVR (Accelerated Idioventricular Rhythm)                 │
-│  • Rate: 40–100 bpm (ENHANCED, not escape)                 │
-│  • Cause: Usually reperfusion after MI                     │
-│  • Clinical: BENIGN — often a GOOD sign                    │
-│  • Treatment: Usually none needed                          │
-├────────────────────────────────────────────────────────────┤
-│  IVR (Idioventricular Rhythm)                              │
-│  • Rate: 20–40 bpm (SLOW escape)                           │
-│  • Cause: SA and AV node failure                           │
-│  • Clinical: EMERGENT — needs pacing                       │
-│  • Treatment: Pacemaker urgently                           │
-└────────────────────────────────────────────────────────────┘
+
+AIVR (Accelerated Idioventricular Rhythm):
+• Rate: 40–100 bpm (ENHANCED, not escape)
+• Cause: Usually reperfusion after MI
+• Clinical: BENIGN — often a GOOD sign
+• Treatment: Usually none needed
+
+IVR (Idioventricular Rhythm):
+• Rate: 20–40 bpm (SLOW escape)
+• Cause: SA and AV node failure
+• Clinical: EMERGENT — needs pacing
+• Treatment: Pacemaker urgently
 
 The ONLY difference is rate:
 • AIVR = 40–100 bpm = Usually good (enhanced, often post-reperfusion)
@@ -1831,7 +2076,7 @@ USED FOR:
 • Any patient needing both atrial and ventricular support
 • Preserves AV synchrony
 
-Clinical Pearl: DDD is the most physiologic pacing mode - it maintains AV synchrony and allows rate response. Understanding the four states (AS-VS, AS-VP, AP-VS, AP-VP) helps with interpreting paced rhythms.`
+Clinical Pearl: DDD is the most natural-feeling pacing mode - it maintains AV synchrony and allows rate response. Understanding the four states (AS-VS, AS-VP, AP-VS, AP-VP) helps with interpreting paced rhythms.`
 };
 
 // Atrial Failure to Capture
@@ -1993,20 +2238,19 @@ WHAT YOU SEE ON ECG
 • Pauses — periods without atrial activity
 
 CONSEQUENCES
-┌────────────────────────────────────────────────────────────┐
-│  1. UNDERPACING                                            │
-│     - Atrial pacing inhibited → loss of atrial kick        │
-│     - Junctional escape rhythm at 40-60 bpm takes over     │
-│                                                           │
-│  2. INAPPROPRIATE MODE SWITCH                              │
-│     - Device thinks there's atrial tachycardia             │
-│     - Switches from DDD to VVI or DDI mode                 │
-│     - Loss of AV synchrony → symptoms                      │
-│                                                           │
-│  3. CAN TRIGGER ATRIAL ARRHYTHMIAS                        │
-│     - Inappropriate pacing patterns can be proarrhythmic   │
-│     - May trigger PACs or atrial tachycardia               │
-└────────────────────────────────────────────────────────────┘
+
+1. UNDERPACING
+   — Atrial pacing inhibited → loss of atrial kick
+   — Junctional escape rhythm at 40-60 bpm takes over
+
+2. INAPPROPRIATE MODE SWITCH
+   — Device thinks there's atrial tachycardia
+   — Switches from DDD to VVI or DDI mode
+   — Loss of AV synchrony → symptoms
+
+3. CAN TRIGGER ATRIAL ARRHYTHMIAS
+   — Inappropriate pacing patterns can be proarrhythmic
+   — May trigger PACs or atrial tachycardia
 
 CAUSES
 • Atrial sensitivity programmed too high (number too low)
@@ -2086,6 +2330,7 @@ export const rhythms: Rhythm[] = [
   mat,
   atrialTachycardia,
   afibSlowResponse,
+  afibNormalResponse,
   afibRVR,
   aflutterSVR,
   aflutterRVR,
@@ -2127,69 +2372,70 @@ const quizEligibleNames = rhythms.map(r => r.name);
 const similarRhythms: Record<string, string[]> = {
   // Sinus Rhythms - rate-based confusion
   'Normal Sinus Rhythm': ['Sinus Bradycardia', 'Sinus Tachycardia', 'Sinus Arrhythmia'],
-  'Sinus Bradycardia': ['Normal Sinus Rhythm', 'Junctional Escape Rhythm', '2:1 AV Block'],
-  'Sinus Tachycardia': ['Normal Sinus Rhythm', 'SVT', 'Atrial Tachycardia'],
+  'Sinus Bradycardia': ['Normal Sinus Rhythm', 'Junctional Escape Rhythm', '2:1 AV Block (2nd Degree)'],
+  'Sinus Tachycardia': ['Normal Sinus Rhythm', 'Supraventricular Tachycardia (SVT)', 'Atrial Tachycardia'],
   'Sinus Arrhythmia': ['Normal Sinus Rhythm', 'AFib with Slow Ventricular Response', 'Wandering Atrial Pacemaker'],
-  'Sinus Pause': ['Sinus Arrest', 'NSR with Blocked PAC', 'Mobitz Type II'],
-  'Sinus Arrest': ['Sinus Pause', 'Complete Heart Block', 'Mobitz Type II'],
+  'Sinus Pause': ['Sinus Arrest', 'NSR with Blocked PAC', 'Mobitz Type II (2nd Degree)'],
+  'Sinus Arrest': ['Sinus Pause', 'Complete Heart Block', 'Mobitz Type II (2nd Degree)'],
 
   // Ectopy - PAC vs PVC confusion
   'NSR with PAC': ['NSR with PVC', 'NSR with PJC', 'NSR with Blocked PAC'],
-  'NSR with PVC': ['NSR with PAC', 'Ventricular Bigeminy', 'Ventricular Couplet'],
+  'NSR with PVC': ['NSR with PAC', 'NSR with Bigeminal PVCs', 'NSR with Couplet (Paired PVCs)'],
   'NSR with PJC': ['NSR with PAC', 'Junctional Escape Rhythm', 'NSR with PVC'],
-  'NSR with Blocked PAC': ['Sinus Pause', 'Mobitz Type II', 'NSR with PAC'],
-  'Ventricular Bigeminy': ['Ventricular Trigeminy', 'NSR with PVC', 'NSR with PAC'],
-  'Ventricular Trigeminy': ['Ventricular Bigeminy', 'NSR with PVC', 'NSR with PAC'],
-  'Ventricular Couplet': ['NSR with PVC', 'NSVT', 'Ventricular Bigeminy'],
+  'NSR with Blocked PAC': ['Sinus Pause', 'Mobitz Type II (2nd Degree)', 'NSR with PAC'],
+  'NSR with Bigeminal PVCs': ['NSR with Trigeminal PVCs', 'NSR with PVC', 'NSR with PAC'],
+  'NSR with Trigeminal PVCs': ['NSR with Bigeminal PVCs', 'NSR with PVC', 'NSR with PAC'],
+  'NSR with Couplet (Paired PVCs)': ['NSR with PVC', 'Non-Sustained VT (NSVT)', 'NSR with Bigeminal PVCs'],
 
   // AV Blocks - commonly confused
   'First Degree AV Block': ['Normal Sinus Rhythm', 'Mobitz Type I (Wenckebach)', 'Junctional Escape Rhythm'],
-  'Mobitz Type I (Wenckebach)': ['Mobitz Type II', '2:1 AV Block', 'First Degree AV Block'],
-  'Mobitz Type II': ['Mobitz Type I (Wenckebach)', '2:1 AV Block', 'Complete Heart Block'],
-  '2:1 AV Block': ['Mobitz Type I (Wenckebach)', 'Mobitz Type II', 'Complete Heart Block'],
-  'Complete Heart Block': ['Mobitz Type II', '2:1 AV Block', 'Idioventricular Rhythm'],
+  'Mobitz Type I (Wenckebach)': ['Mobitz Type II (2nd Degree)', '2:1 AV Block (2nd Degree)', 'First Degree AV Block'],
+  'Mobitz Type II (2nd Degree)': ['Mobitz Type I (Wenckebach)', '2:1 AV Block (2nd Degree)', 'Complete Heart Block'],
+  '2:1 AV Block (2nd Degree)': ['Mobitz Type I (Wenckebach)', 'Mobitz Type II (2nd Degree)', 'Complete Heart Block'],
+  'Complete Heart Block': ['Mobitz Type II (2nd Degree)', '2:1 AV Block (2nd Degree)', 'Idioventricular Rhythm (IVR)'],
 
   // Atrial Arrhythmias - irregular rhythms
-  'Wandering Atrial Pacemaker': ['Multifocal Atrial Tachycardia', 'Sinus Arrhythmia', 'AFib with Slow Ventricular Response'],
-  'Multifocal Atrial Tachycardia': ['Wandering Atrial Pacemaker', 'AFib with Rapid Ventricular Response', 'Atrial Tachycardia'],
-  'Atrial Tachycardia': ['Sinus Tachycardia', 'SVT', 'AFL with Rapid Ventricular Response'],
-  'AFib with Slow Ventricular Response': ['AFib with Rapid Ventricular Response', 'Wandering Atrial Pacemaker', 'AFL with Slow Ventricular Response'],
-  'AFib with Rapid Ventricular Response': ['AFib with Slow Ventricular Response', 'AFL with Rapid Ventricular Response', 'Multifocal Atrial Tachycardia'],
+  'Wandering Atrial Pacemaker': ['Multifocal Atrial Tachycardia (MAT)', 'Sinus Arrhythmia', 'AFib with Slow Ventricular Response'],
+  'Multifocal Atrial Tachycardia (MAT)': ['Wandering Atrial Pacemaker', 'AFib with Rapid Ventricular Response', 'Atrial Tachycardia'],
+  'Atrial Tachycardia': ['Sinus Tachycardia', 'Supraventricular Tachycardia (SVT)', 'AFL with Rapid Ventricular Response'],
+  'AFib with Slow Ventricular Response': ['AFib with Rapid Ventricular Response', 'AFib with Normal Ventricular Response', 'AFL with Slow Ventricular Response'],
+  'AFib with Normal Ventricular Response': ['AFib with Slow Ventricular Response', 'AFib with Rapid Ventricular Response', 'Wandering Atrial Pacemaker'],
+  'AFib with Rapid Ventricular Response': ['AFib with Slow Ventricular Response', 'AFL with Rapid Ventricular Response', 'Multifocal Atrial Tachycardia (MAT)'],
   'AFL with Slow Ventricular Response': ['AFib with Slow Ventricular Response', 'AFL with Rapid Ventricular Response', 'Atrial Tachycardia'],
-  'AFL with Rapid Ventricular Response': ['AFL with Slow Ventricular Response', 'SVT', 'Sinus Tachycardia'],
+  'AFL with Rapid Ventricular Response': ['AFL with Slow Ventricular Response', 'Supraventricular Tachycardia (SVT)', 'Sinus Tachycardia'],
 
   // Junctional Rhythms - rate-based
-  'Junctional Escape Rhythm': ['Accelerated Junctional Rhythm', 'Sinus Bradycardia', 'Idioventricular Rhythm'],
+  'Junctional Escape Rhythm': ['Accelerated Junctional Rhythm', 'Sinus Bradycardia', 'Idioventricular Rhythm (IVR)'],
   'Accelerated Junctional Rhythm': ['Junctional Escape Rhythm', 'Junctional Tachycardia', 'Normal Sinus Rhythm'],
-  'Junctional Tachycardia': ['Accelerated Junctional Rhythm', 'SVT', 'Atrial Tachycardia'],
-  'SVT': ['Sinus Tachycardia', 'AFL with Rapid Ventricular Response', 'Junctional Tachycardia'],
-  'WPW Pattern': ['First Degree AV Block', 'LBBB', 'NSR with PVC'],
+  'Junctional Tachycardia': ['Accelerated Junctional Rhythm', 'Supraventricular Tachycardia (SVT)', 'Atrial Tachycardia'],
+  'Supraventricular Tachycardia (SVT)': ['Sinus Tachycardia', 'AFL with Rapid Ventricular Response', 'Junctional Tachycardia'],
+  'Wolff-Parkinson-White (WPW)': ['First Degree AV Block', 'Sinus Rhythm with LBBB', 'NSR with PVC'],
 
   // Ventricular Rhythms - wide complex
-  'Idioventricular Rhythm': ['Accelerated Idioventricular Rhythm', 'Complete Heart Block', 'Junctional Escape Rhythm'],
-  'Accelerated Idioventricular Rhythm': ['Idioventricular Rhythm', 'Ventricular Tachycardia', 'Junctional Escape Rhythm'],
-  'Ventricular Tachycardia': ['SVT', 'AFL with Rapid Ventricular Response', 'Torsades de Pointes'],
-  'NSVT': ['Ventricular Tachycardia', 'Ventricular Couplet', 'NSR with PVC'],
-  'Torsades de Pointes': ['Ventricular Tachycardia', 'Ventricular Fibrillation', 'Polymorphic VT'],
+  'Idioventricular Rhythm (IVR)': ['Accelerated Idioventricular Rhythm (AIVR)', 'Complete Heart Block', 'Junctional Escape Rhythm'],
+  'Accelerated Idioventricular Rhythm (AIVR)': ['Idioventricular Rhythm (IVR)', 'Ventricular Tachycardia', 'Junctional Escape Rhythm'],
+  'Ventricular Tachycardia': ['Supraventricular Tachycardia (SVT)', 'AFL with Rapid Ventricular Response', 'Torsades de Pointes'],
+  'Non-Sustained VT (NSVT)': ['Ventricular Tachycardia', 'NSR with Couplet (Paired PVCs)', 'NSR with PVC'],
+  'Torsades de Pointes': ['Ventricular Tachycardia', 'Ventricular Fibrillation', 'Accelerated Idioventricular Rhythm (AIVR)'],
   'Ventricular Fibrillation': ['Asystole', 'Torsades de Pointes', 'Ventricular Tachycardia'],
-  'Asystole': ['Ventricular Fibrillation', 'Fine VFib', 'Complete Heart Block'],
+  'Asystole': ['Ventricular Fibrillation', 'Complete Heart Block', 'Sinus Arrest'],
 
   // Bundle Branch Blocks
-  'LBBB': ['RBBB', 'WPW Pattern', 'Ventricular Paced Rhythm'],
-  'RBBB': ['LBBB', 'NSR with PVC', 'Normal Sinus Rhythm'],
+  'Sinus Rhythm with LBBB': ['Sinus Rhythm with RBBB', 'Wolff-Parkinson-White (WPW)', 'VVI Pacing'],
+  'Sinus Rhythm with RBBB': ['Sinus Rhythm with LBBB', 'NSR with PVC', 'Normal Sinus Rhythm'],
 
   // Paced Rhythms
-  'AAI Paced Rhythm': ['DDD Paced Rhythm', 'Normal Sinus Rhythm', 'Sinus Bradycardia'],
-  'VVI Paced Rhythm': ['DDD Paced Rhythm', 'Idioventricular Rhythm', 'Complete Heart Block'],
-  'DDD Paced Rhythm': ['AAI Paced Rhythm', 'VVI Paced Rhythm', 'First Degree AV Block'],
+  'AAI Pacing': ['DDD Pacing', 'Normal Sinus Rhythm', 'Sinus Bradycardia'],
+  'VVI Pacing': ['DDD Pacing', 'Idioventricular Rhythm (IVR)', 'Complete Heart Block'],
+  'DDD Pacing': ['AAI Pacing', 'VVI Pacing', 'First Degree AV Block'],
 
   // Pacemaker Malfunctions
-  'Failure to Capture - Atrial': ['Atrial Undersensing', 'AAI Paced Rhythm', 'Sinus Arrest'],
-  'Failure to Capture - Ventricular': ['Ventricular Undersensing', 'VVI Paced Rhythm', 'Complete Heart Block'],
-  'Atrial Undersensing': ['Failure to Capture - Atrial', 'AAI Paced Rhythm', 'Atrial Oversensing'],
-  'Ventricular Undersensing': ['Failure to Capture - Ventricular', 'VVI Paced Rhythm', 'Ventricular Oversensing'],
-  'Atrial Oversensing': ['Atrial Undersensing', 'AAI Paced Rhythm', 'Sinus Pause'],
-  'Ventricular Oversensing': ['Ventricular Undersensing', 'VVI Paced Rhythm', 'Sinus Pause'],
+  'Atrial Failure to Capture': ['Atrial Undersensing', 'AAI Pacing', 'Sinus Arrest'],
+  'Ventricular Failure to Capture': ['Ventricular Undersensing', 'VVI Pacing', 'Complete Heart Block'],
+  'Atrial Undersensing': ['Atrial Failure to Capture', 'AAI Pacing', 'Atrial Oversensing'],
+  'Ventricular Undersensing': ['Ventricular Failure to Capture', 'VVI Pacing', 'Ventricular Oversensing'],
+  'Atrial Oversensing': ['Atrial Undersensing', 'AAI Pacing', 'Sinus Pause'],
+  'Ventricular Oversensing': ['Ventricular Undersensing', 'VVI Pacing', 'Sinus Pause'],
 };
 
 // Generate 4 quiz options (A, B, C, D) including the correct answer

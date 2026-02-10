@@ -126,7 +126,7 @@ export default function VaultLoginPage() {
           </div>
 
           <p className="text-center text-slate-500 text-sm mt-6">
-            Practice ECG rhythm recognition with 46 animated strips
+            Practice ECG rhythm recognition with 49 animated strips
           </p>
         </div>
       </div>

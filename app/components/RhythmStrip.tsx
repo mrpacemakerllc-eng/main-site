@@ -10,10 +10,12 @@ interface RhythmStripProps {
   speed?: number; // mm per second (default 25)
   pixelsPerMm?: number; // canvas pixels per mm (default 4)
   height?: number; // canvas height in pixels
-  width?: number; // canvas width in pixels
+  width?: number; // canvas width in pixels (ignored if responsive=true)
   isRunning?: boolean;
   caliperMode?: boolean;
   leadLabel?: string; // Lead label to display (default: "Lead II")
+  showOverlays?: boolean; // Show lead label and speed/rate overlays (default: true)
+  responsive?: boolean; // Auto-size to fill container width (default: false)
 }
 
 // Colors matching standard ECG paper
@@ -28,13 +30,16 @@ export default function RhythmStrip({
   atrialRate,
   speed = 25,
   pixelsPerMm = 4,
-  height = 200,
-  width = 800,
+  height: propHeight = 200,
+  width: propWidth = 800,
   isRunning = true,
   caliperMode = false,
   leadLabel = 'Lead II',
+  showOverlays = true,
+  responsive = false,
 }: RhythmStripProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const gridCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationRef = useRef<number | null>(null);
   const offsetRef = useRef(0);
@@ -42,9 +47,45 @@ export default function RhythmStrip({
   const [displayRate, setDisplayRate] = useState(heartRate);
   const caliperMarkersRef = useRef<number[]>([]);
   const [caliperMarkerCount, setCaliperMarkerCount] = useState(0);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
 
-  const baselineY = height / 2 + pixelsPerMm * 5;
-  const amplitudeScale = height * 0.35;
+  // High-DPI support: render canvas at native device resolution
+  const [dpr, setDpr] = useState(1);
+  useEffect(() => {
+    const d = window.devicePixelRatio || 1;
+    if (d !== 1) setDpr(d);
+  }, []);
+
+  // Responsive sizing: measure container and update width
+  useEffect(() => {
+    if (!responsive || !containerRef.current) return;
+
+    const updateWidth = () => {
+      if (containerRef.current) {
+        const newWidth = containerRef.current.clientWidth;
+        if (newWidth > 0) setContainerWidth(newWidth);
+      }
+    };
+
+    updateWidth();
+
+    const resizeObserver = new ResizeObserver(updateWidth);
+    resizeObserver.observe(containerRef.current);
+
+    return () => resizeObserver.disconnect();
+  }, [responsive]);
+
+  // Use container width if responsive, otherwise use prop
+  const width = responsive && containerWidth ? containerWidth : propWidth;
+  // Scale height proportionally when responsive
+  const height = responsive && containerWidth ? Math.round(propHeight * (containerWidth / propWidth)) : propHeight;
+
+  // Center baseline between Lead II label (top ~35px) and Mr. Pacemaker watermark (bottom ~30px)
+  // Offset down from center to account for R waves being taller than S waves
+  // Snap to nearest grid line so isoelectric line sits exactly on a red horizontal line
+  const rawBaselineY = height / 2 + pixelsPerMm * 5;
+  const baselineY = Math.round(rawBaselineY / pixelsPerMm) * pixelsPerMm;
+  const amplitudeScale = height * 0.32; // Slightly reduced to ensure no overlap
 
   // Calculate intervals in pixels
   const ventricularIntervalPx = ((60 / heartRate) * speed) * pixelsPerMm;
@@ -214,10 +255,11 @@ export default function RhythmStrip({
     if (gridCanvasRef.current) return gridCanvasRef.current;
 
     const gridCanvas = document.createElement('canvas');
-    gridCanvas.width = width;
-    gridCanvas.height = height;
+    gridCanvas.width = width * dpr;
+    gridCanvas.height = height * dpr;
     const ctx = gridCanvas.getContext('2d');
     if (!ctx) return null;
+    ctx.scale(dpr, dpr);
 
     const smallSquare = pixelsPerMm;
     const largeSquare = pixelsPerMm * 5;
@@ -253,13 +295,16 @@ export default function RhythmStrip({
 
     gridCanvasRef.current = gridCanvas;
     return gridCanvas;
-  }, [width, height, pixelsPerMm]);
+  }, [width, height, pixelsPerMm, dpr]);
 
   // Draw cached grid to main canvas
   const drawGrid = useCallback((ctx: CanvasRenderingContext2D) => {
     const gridCanvas = getGridCanvas();
     if (gridCanvas) {
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // Reset to identity for 1:1 pixel copy
       ctx.drawImage(gridCanvas, 0, 0);
+      ctx.restore();
     }
   }, [getGridCanvas]);
 
@@ -490,6 +535,9 @@ export default function RhythmStrip({
 
       const smoothOffset = Math.round(offset);
 
+      // Move Torsades up by 1 large box (5mm) to center it better
+      const torsadesBaselineY = baselineY - pixelsPerMm * 5;
+
       ctx.beginPath();
 
       for (let x = 0; x < width; x += 1) {
@@ -504,7 +552,7 @@ export default function RhythmStrip({
         // Multiply directly - envelope smoothly transitions through zero
         // This creates continuous twist without sharp W/M points
         const waveValue = wave * envelope;
-        const y = baselineY - waveValue * amplitudeScale * 0.75;
+        const y = torsadesBaselineY - waveValue * amplitudeScale * 0.75;
 
         if (x === 0) {
           ctx.moveTo(x, y);
@@ -671,10 +719,86 @@ export default function RhythmStrip({
       }
 
       ctx.stroke();
+    } else if (waveformType === 'afib_nvr') {
+      // AFib with normal ventricular response - same as afib_slow but controlled rate 60-100
+      // Thinner line for fibrillatory waves to look more abnormal
+      ctx.lineWidth = 1.5;
+      const irregularities = [0.85, 1.1, 0.9, 1.05, 0.95, 1.15, 0.88, 1.12];
+
+      const cumulativeOffsets: number[] = [0];
+      for (let i = 0; i < irregularities.length; i++) {
+        cumulativeOffsets.push(cumulativeOffsets[i] + ventricularIntervalPx * irregularities[i]);
+      }
+      const patternLength = cumulativeOffsets[cumulativeOffsets.length - 1];
+
+      const qrsW = pixelsPerMm * 2;
+      const stLen = pixelsPerMm * 2;
+      const tW = pixelsPerMm * 4;
+
+      const fibWaveHeight = amplitudeScale * 0.025;
+      const fibFreq = 2.5;
+      const getFibY = (x: number) => {
+        const pos = x + offset;
+        return fibWaveHeight * (
+          Math.sin(pos * fibFreq * 0.4) * 0.4 +
+          Math.sin(pos * fibFreq * 0.9 + 0.8) * 0.35 +
+          Math.sin(pos * fibFreq * 1.5 + 1.7) * 0.25
+        );
+      };
+
+      const adjustedOffset = ((offset % patternLength) + patternLength) % patternLength;
+      const patternStartX = -adjustedOffset;
+
+      ctx.beginPath();
+      ctx.moveTo(0, baselineY + getFibY(0));
+
+      let currentPatternStart = patternStartX;
+
+      while (currentPatternStart < width + patternLength) {
+        for (let i = 0; i < irregularities.length; i++) {
+          const beatX = currentPatternStart + cumulativeOffsets[i];
+          const nextBeatX = i < irregularities.length - 1
+            ? currentPatternStart + cumulativeOffsets[i + 1]
+            : currentPatternStart + patternLength;
+
+          if (beatX >= -30 && beatX <= width + 30) {
+            for (let fx = Math.max(0, beatX - 20); fx < beatX; fx += 1) {
+              ctx.lineTo(fx, baselineY + getFibY(fx));
+            }
+            ctx.lineTo(beatX, baselineY);
+
+            ctx.lineTo(beatX + qrsW * 0.15, baselineY + amplitudeScale * 0.08);
+            ctx.lineTo(beatX + qrsW * 0.4, baselineY - amplitudeScale * 0.95);
+            ctx.lineTo(beatX + qrsW * 0.65, baselineY + amplitudeScale * 0.15);
+            ctx.lineTo(beatX + qrsW, baselineY);
+
+            const stEnd = beatX + qrsW + stLen;
+            ctx.lineTo(stEnd, baselineY);
+
+            const tHeight = amplitudeScale * 0.18;
+            for (let t = 0; t <= 1; t += 0.08) {
+              const x = stEnd + t * tW;
+              const y = baselineY - tHeight * Math.sin(t * Math.PI);
+              ctx.lineTo(x, y);
+            }
+
+            const tEnd = stEnd + tW;
+            for (let fx = tEnd; fx < Math.min(nextBeatX, width + 30); fx += 1) {
+              ctx.lineTo(fx, baselineY + getFibY(fx));
+            }
+          }
+        }
+        currentPatternStart += patternLength;
+      }
+
+      ctx.lineTo(width, baselineY);
+      ctx.stroke();
     } else if (waveformType === 'afib_slow') {
       // AFib with slow ventricular response - ONE continuous line
       // Key features: irregularly irregular RR, no P waves, fine fibrillatory baseline
       // T waves are NORMAL in AFib (upright in Lead II) - AFib only affects atrial activity
+      // Thinner line for fibrillatory waves to look more abnormal
+      ctx.lineWidth = 1.5;
       const irregularities = [0.7, 1.3, 0.8, 1.1, 1.4, 0.9, 1.2, 0.75];
 
       // Build cumulative offsets for one complete pattern
@@ -760,47 +884,55 @@ export default function RhythmStrip({
 
       ctx.stroke();
     } else if (waveformType === 'sinus_pause') {
-      // Sinus pause: Normal sinus rhythm, then SA node fails to fire (missing P wave)
-      // Pattern: 2 normal beats, then pause (3.75 intervals = ~16 bpm), then normal beat resumes
-      // Total pattern = 6.75 intervals (2 normal + 3.75 pause + 1 normal)
-      const pauseIntervals = 3.75; // Makes pause R-R ~16 bpm at 60 bpm underlying rate
-      const patternLength = ventricularIntervalPx * (3 + pauseIntervals);
-      const startPattern = Math.floor(offset / patternLength) - 1;
+      // Sinus pause: Clear NSR first, then SA node fails to fire (missing P wave)
+      // Pattern: 4 normal beats, then pause (3.75 intervals), then 1 beat resumes
+      // Total pattern = 8.75 intervals (4 normal + 3.75 pause + 1 normal)
+      const pauseIntervals = 3.75; // Makes pause R-R show ~16 bpm
+      const patternLength = ventricularIntervalPx * (5 + pauseIntervals);
+      // Phase shift so strip starts with normal beats visible, not the pause
+      const phaseShift = ventricularIntervalPx * (4 + pauseIntervals); // Start right after pause ends
+      const adjustedOffset = offset + phaseShift;
+      const startPattern = Math.floor(adjustedOffset / patternLength) - 1;
       const numPatterns = Math.ceil(width / patternLength) + 3;
 
       ctx.beginPath();
-      const firstPatternStart = startPattern * patternLength - offset;
+      const firstPatternStart = startPattern * patternLength - adjustedOffset;
       ctx.moveTo(firstPatternStart, baselineY);
 
       for (let i = 0; i < numPatterns; i++) {
         const pattern = startPattern + i;
-        const patternStart = pattern * patternLength - offset;
+        const patternStart = pattern * patternLength - adjustedOffset;
 
-        // Beat 1 - normal PQRST (full interval)
-        const beat1Start = patternStart;
+        // Beat 1 - normal PQRST
         const beat1End = patternStart + ventricularIntervalPx;
-        drawSinusComplex(ctx, beat1Start, beat1End, false, false, true);
+        drawSinusComplex(ctx, patternStart, beat1End, false, false, true);
 
-        // Beat 2 - normal PQRST (full interval)
-        const beat2Start = beat1End;
-        const beat2End = beat2Start + ventricularIntervalPx;
-        drawSinusComplex(ctx, beat2Start, beat2End, false, false, true);
+        // Beat 2 - normal PQRST
+        const beat2End = beat1End + ventricularIntervalPx;
+        drawSinusComplex(ctx, beat1End, beat2End, false, false, true);
 
-        // SINUS PAUSE - SA node fails to fire, just flat isoelectric baseline
-        // This represents ~3.75 intervals (~16 bpm) where P waves should have appeared but didn't
-        const pauseEnd = beat2End + ventricularIntervalPx * pauseIntervals;
+        // Beat 3 - normal PQRST
+        const beat3End = beat2End + ventricularIntervalPx;
+        drawSinusComplex(ctx, beat2End, beat3End, false, false, true);
+
+        // Beat 4 - normal PQRST
+        const beat4End = beat3End + ventricularIntervalPx;
+        drawSinusComplex(ctx, beat3End, beat4End, false, false, true);
+
+        // SINUS PAUSE - SA node fails to fire, flat isoelectric baseline
+        const pauseEnd = beat4End + ventricularIntervalPx * pauseIntervals;
         ctx.lineTo(pauseEnd, baselineY);
 
-        // Beat 3 - normal sinus resumes (full interval, same morphology as before)
-        const beat3End = pauseEnd + ventricularIntervalPx;
-        drawSinusComplex(ctx, pauseEnd, beat3End, false, false, true);
+        // Beat 5 - normal sinus resumes
+        const beat5End = pauseEnd + ventricularIntervalPx;
+        drawSinusComplex(ctx, pauseEnd, beat5End, false, false, true);
       }
 
       ctx.stroke();
     } else if (waveformType === 'sinus_arrest') {
-      // Sinus ARREST: SA node fails, shows 60 bpm normal then drops to 19 bpm during arrest
-      // 19 bpm = 60/19 = ~3.16 intervals
-      const arrestIntervals = 3.16; // 60 bpm → 19 bpm during arrest
+      // Sinus ARREST: SA node fails for exactly 2 full cycles
+      // arrestIntervals = 2.0 means the pause equals exactly 2× the normal R-R
+      const arrestIntervals = 2.0; // Exactly 2 missed cycles
       const patternLength = ventricularIntervalPx * (3 + arrestIntervals);
       const startPattern = Math.floor(offset / patternLength) - 1;
       const numPatterns = Math.ceil(width / patternLength) + 3;
@@ -819,7 +951,7 @@ export default function RhythmStrip({
         const beat2End = beat1End + ventricularIntervalPx;
         drawSinusComplex(ctx, beat1End, beat2End, false, false, true);
 
-        // SINUS ARREST - ~3.16 intervals (~19 bpm) where SA node failed
+        // SINUS ARREST - exactly 2 missed cycles (2× normal R-R)
         const arrestEnd = beat2End + ventricularIntervalPx * arrestIntervals;
         ctx.lineTo(arrestEnd, baselineY);
 
@@ -1011,7 +1143,7 @@ export default function RhythmStrip({
             // Flutter wave not interrupted by QRS
             // Inverted sawtooth: gradual descent (going more negative), sharp ascent
             // Use smooth curve for more realistic appearance
-            const steps = 10;
+            const steps = 20;
             for (let s = 0; s <= steps; s++) {
               const t = s / steps;
               const x = fStart + t * flutterIntervalPx;
@@ -1154,6 +1286,8 @@ export default function RhythmStrip({
       // AFib with Rapid Ventricular Response - irregularly irregular, fast rate
       // Key: varying RR intervals, no P waves, rapid overall rate ~110-160 bpm
       // Note: No fibrillatory baseline in RVR - too fast, just flat baseline
+      // Thinner line for AFib to look more abnormal
+      ctx.lineWidth = 1.5;
       const irregularities = [0.75, 0.95, 0.7, 0.85, 1.0, 0.72, 0.88, 0.78];
       const baseInterval = ventricularIntervalPx;
 
@@ -1690,11 +1824,13 @@ export default function RhythmStrip({
       ctx.stroke();
     } else if (waveformType === 'paced_vvi') {
       // VVI Pacing — ventricular spike followed by wide paced QRS
+      // Move baseline up by 1 big square (5mm) to avoid deep S wave overlapping Mr. Pacemaker
+      const vviBaselineY = baselineY - pixelsPerMm * 5;
       const startBeat = Math.floor(offset / ventricularIntervalPx) - 1;
       const numBeatsVisible = Math.ceil(width / ventricularIntervalPx) + 3;
 
       ctx.beginPath();
-      ctx.moveTo(startBeat * ventricularIntervalPx - offset, baselineY);
+      ctx.moveTo(startBeat * ventricularIntervalPx - offset, vviBaselineY);
 
       for (let i = 0; i < numBeatsVisible; i++) {
         const beat = startBeat + i;
@@ -1703,12 +1839,12 @@ export default function RhythmStrip({
 
         // Flat baseline to spike
         const spikeX = beatStart + pixelsPerMm * 2;
-        ctx.lineTo(spikeX, baselineY);
+        ctx.lineTo(spikeX, vviBaselineY);
 
         // Ventricular pacing spike (thin vertical artifact)
-        ctx.lineTo(spikeX, baselineY - amplitudeScale * 0.5);
-        ctx.lineTo(spikeX + 1, baselineY - amplitudeScale * 0.5);
-        ctx.lineTo(spikeX + 1, baselineY);
+        ctx.lineTo(spikeX, vviBaselineY - amplitudeScale * 0.5);
+        ctx.lineTo(spikeX + 1, vviBaselineY - amplitudeScale * 0.5);
+        ctx.lineTo(spikeX + 1, vviBaselineY);
 
         // Paced QRS - RV apical pacing in lead II: predominantly NEGATIVE deflection
         // Depolarization travels superiorly, away from inferior leads
@@ -1718,37 +1854,39 @@ export default function RhythmStrip({
         const tHeight = amplitudeScale * 0.20; // Discordant upright T wave
 
         // Small initial r wave
-        ctx.lineTo(spikeX + 1 + qrsWidth * 0.05, baselineY);
-        ctx.lineTo(spikeX + 1 + qrsWidth * 0.12, baselineY - rHeight); // small r peak
+        ctx.lineTo(spikeX + 1 + qrsWidth * 0.05, vviBaselineY);
+        ctx.lineTo(spikeX + 1 + qrsWidth * 0.12, vviBaselineY - rHeight); // small r peak
 
         // Sharp downstroke into deep S wave
-        ctx.lineTo(spikeX + 1 + qrsWidth * 0.20, baselineY);
-        ctx.lineTo(spikeX + 1 + qrsWidth * 0.35, baselineY + sDepth * 0.7);
-        ctx.lineTo(spikeX + 1 + qrsWidth * 0.45, baselineY + sDepth); // S nadir (deep)
+        ctx.lineTo(spikeX + 1 + qrsWidth * 0.20, vviBaselineY);
+        ctx.lineTo(spikeX + 1 + qrsWidth * 0.35, vviBaselineY + sDepth * 0.7);
+        ctx.lineTo(spikeX + 1 + qrsWidth * 0.45, vviBaselineY + sDepth); // S nadir (deep)
 
         // S wave recovery
-        ctx.lineTo(spikeX + 1 + qrsWidth * 0.55, baselineY + sDepth * 0.7);
-        ctx.lineTo(spikeX + 1 + qrsWidth * 0.70, baselineY + sDepth * 0.15);
+        ctx.lineTo(spikeX + 1 + qrsWidth * 0.55, vviBaselineY + sDepth * 0.7);
+        ctx.lineTo(spikeX + 1 + qrsWidth * 0.70, vviBaselineY + sDepth * 0.15);
 
         // Discordant upright T wave (opposite to negative QRS)
         const tStart = spikeX + 1 + qrsWidth * 0.75;
         const tWidth = pixelsPerMm * 3.5;
         for (let t = 0; t <= 1; t += 0.1) {
           const x = tStart + t * tWidth;
-          ctx.lineTo(x, baselineY - tHeight * Math.sin(t * Math.PI));
+          ctx.lineTo(x, vviBaselineY - tHeight * Math.sin(t * Math.PI));
         }
 
-        ctx.lineTo(beatEnd, baselineY);
+        ctx.lineTo(beatEnd, vviBaselineY);
       }
 
       ctx.stroke();
     } else if (waveformType === 'paced_ddd') {
       // DDD Pacing - atrial spike, AV delay, ventricular spike
+      // Move baseline up by 1 big square (5mm) to avoid deep S wave overlapping Mr. Pacemaker
+      const dddBaselineY = baselineY - pixelsPerMm * 5;
       const startBeat = Math.floor(offset / ventricularIntervalPx) - 1;
       const numBeatsVisible = Math.ceil(width / ventricularIntervalPx) + 3;
 
       ctx.beginPath();
-      ctx.moveTo(startBeat * ventricularIntervalPx - offset, baselineY);
+      ctx.moveTo(startBeat * ventricularIntervalPx - offset, dddBaselineY);
 
       for (let i = 0; i < numBeatsVisible; i++) {
         const beat = startBeat + i;
@@ -1757,26 +1895,26 @@ export default function RhythmStrip({
 
         // Atrial pacing spike
         const aSpikeX = beatStart + pixelsPerMm * 2;
-        ctx.lineTo(aSpikeX, baselineY);
-        ctx.lineTo(aSpikeX, baselineY - amplitudeScale * 0.35);
-        ctx.lineTo(aSpikeX + 1, baselineY - amplitudeScale * 0.35);
-        ctx.lineTo(aSpikeX + 1, baselineY);
+        ctx.lineTo(aSpikeX, dddBaselineY);
+        ctx.lineTo(aSpikeX, dddBaselineY - amplitudeScale * 0.35);
+        ctx.lineTo(aSpikeX + 1, dddBaselineY - amplitudeScale * 0.35);
+        ctx.lineTo(aSpikeX + 1, dddBaselineY);
 
         // Small paced P wave
         const pHeight = amplitudeScale * 0.10;
         for (let t = 0; t <= 1; t += 0.1) {
-          ctx.lineTo(aSpikeX + 1 + t * pixelsPerMm * 2, baselineY - pHeight * Math.sin(t * Math.PI));
+          ctx.lineTo(aSpikeX + 1 + t * pixelsPerMm * 2, dddBaselineY - pHeight * Math.sin(t * Math.PI));
         }
 
         // AV delay (programmed PR)
         const avDelay = pixelsPerMm * 5; // ~200ms AV delay
         const vSpikeX = aSpikeX + avDelay;
-        ctx.lineTo(vSpikeX, baselineY);
+        ctx.lineTo(vSpikeX, dddBaselineY);
 
         // Ventricular pacing spike
-        ctx.lineTo(vSpikeX, baselineY - amplitudeScale * 0.5);
-        ctx.lineTo(vSpikeX + 1, baselineY - amplitudeScale * 0.5);
-        ctx.lineTo(vSpikeX + 1, baselineY);
+        ctx.lineTo(vSpikeX, dddBaselineY - amplitudeScale * 0.5);
+        ctx.lineTo(vSpikeX + 1, dddBaselineY - amplitudeScale * 0.5);
+        ctx.lineTo(vSpikeX + 1, dddBaselineY);
 
         // Paced QRS - RV apical pacing in lead II: predominantly NEGATIVE deflection
         const qrsWidth = pixelsPerMm * 4; // ~160ms wide
@@ -1785,27 +1923,27 @@ export default function RhythmStrip({
         const tHeight = amplitudeScale * 0.20; // Discordant upright T wave
 
         // Small initial r wave
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.05, baselineY);
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.12, baselineY - rHeight); // small r peak
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.05, dddBaselineY);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.12, dddBaselineY - rHeight); // small r peak
 
         // Sharp downstroke into deep S wave
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.20, baselineY);
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.35, baselineY + sDepth * 0.7);
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.45, baselineY + sDepth); // S nadir (deep)
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.20, dddBaselineY);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.35, dddBaselineY + sDepth * 0.7);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.45, dddBaselineY + sDepth); // S nadir (deep)
 
         // S wave recovery
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.55, baselineY + sDepth * 0.7);
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.70, baselineY + sDepth * 0.15);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.55, dddBaselineY + sDepth * 0.7);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.70, dddBaselineY + sDepth * 0.15);
 
         // Discordant upright T wave (opposite to negative QRS)
         const tStart = vSpikeX + 1 + qrsWidth * 0.75;
         const tWidth = pixelsPerMm * 3.5;
         for (let t = 0; t <= 1; t += 0.1) {
           const x = tStart + t * tWidth;
-          ctx.lineTo(x, baselineY - tHeight * Math.sin(t * Math.PI));
+          ctx.lineTo(x, dddBaselineY - tHeight * Math.sin(t * Math.PI));
         }
 
-        ctx.lineTo(beatEnd, baselineY);
+        ctx.lineTo(beatEnd, dddBaselineY);
       }
 
       ctx.stroke();
@@ -1845,11 +1983,13 @@ export default function RhythmStrip({
       ctx.stroke();
     } else if (waveformType === 'failure_capture_a') {
       // Atrial Failure to Capture - A spikes without P waves, ventricular pacing intact
+      // Move baseline up by 1 big square (5mm) to avoid deep S wave overlapping Mr. Pacemaker
+      const aFailBaselineY = baselineY - pixelsPerMm * 5;
       const startBeat = Math.floor(offset / ventricularIntervalPx) - 1;
       const numBeatsVisible = Math.ceil(width / ventricularIntervalPx) + 3;
 
       ctx.beginPath();
-      ctx.moveTo(startBeat * ventricularIntervalPx - offset, baselineY);
+      ctx.moveTo(startBeat * ventricularIntervalPx - offset, aFailBaselineY);
 
       for (let i = 0; i < numBeatsVisible; i++) {
         const beat = startBeat + i;
@@ -1858,42 +1998,42 @@ export default function RhythmStrip({
 
         // Atrial spike that fails to capture - no P wave follows
         const aSpikeX = beatStart + pixelsPerMm * 2;
-        ctx.lineTo(aSpikeX, baselineY);
-        ctx.lineTo(aSpikeX, baselineY - amplitudeScale * 0.35);
-        ctx.lineTo(aSpikeX + 1, baselineY - amplitudeScale * 0.35);
-        ctx.lineTo(aSpikeX + 1, baselineY);
+        ctx.lineTo(aSpikeX, aFailBaselineY);
+        ctx.lineTo(aSpikeX, aFailBaselineY - amplitudeScale * 0.35);
+        ctx.lineTo(aSpikeX + 1, aFailBaselineY - amplitudeScale * 0.35);
+        ctx.lineTo(aSpikeX + 1, aFailBaselineY);
         // NO P wave - just flat line to V spike
 
         // AV delay
         const avDelay = pixelsPerMm * 5;
         const vSpikeX = aSpikeX + avDelay;
-        ctx.lineTo(vSpikeX, baselineY);
+        ctx.lineTo(vSpikeX, aFailBaselineY);
 
         // Ventricular spike - captures normally
-        ctx.lineTo(vSpikeX, baselineY - amplitudeScale * 0.5);
-        ctx.lineTo(vSpikeX + 1, baselineY - amplitudeScale * 0.5);
-        ctx.lineTo(vSpikeX + 1, baselineY);
+        ctx.lineTo(vSpikeX, aFailBaselineY - amplitudeScale * 0.5);
+        ctx.lineTo(vSpikeX + 1, aFailBaselineY - amplitudeScale * 0.5);
+        ctx.lineTo(vSpikeX + 1, aFailBaselineY);
 
         // Paced QRS (RV apical - negative in lead II)
         const qrsWidth = pixelsPerMm * 4;
         const sDepth = amplitudeScale * 0.85;
         const tHeight = amplitudeScale * 0.20;
 
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.05, baselineY);
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.12, baselineY - amplitudeScale * 0.15);
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.20, baselineY);
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.35, baselineY + sDepth * 0.7);
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.45, baselineY + sDepth);
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.55, baselineY + sDepth * 0.7);
-        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.70, baselineY + sDepth * 0.15);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.05, aFailBaselineY);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.12, aFailBaselineY - amplitudeScale * 0.15);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.20, aFailBaselineY);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.35, aFailBaselineY + sDepth * 0.7);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.45, aFailBaselineY + sDepth);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.55, aFailBaselineY + sDepth * 0.7);
+        ctx.lineTo(vSpikeX + 1 + qrsWidth * 0.70, aFailBaselineY + sDepth * 0.15);
 
         // Discordant upright T wave
         const tStart = vSpikeX + 1 + qrsWidth * 0.75;
         for (let t = 0; t <= 1; t += 0.1) {
-          ctx.lineTo(tStart + t * pixelsPerMm * 3.5, baselineY - tHeight * Math.sin(t * Math.PI));
+          ctx.lineTo(tStart + t * pixelsPerMm * 3.5, aFailBaselineY - tHeight * Math.sin(t * Math.PI));
         }
 
-        ctx.lineTo(beatEnd, baselineY);
+        ctx.lineTo(beatEnd, aFailBaselineY);
       }
 
       ctx.stroke();
@@ -2613,9 +2753,11 @@ export default function RhythmStrip({
       // We're in the normal beat
       return { beatNum: patternNum * 2, rrInterval: normalRR };
     }
-    else if (waveformType === 'afib_rvr' || waveformType === 'afib_slow') {
+    else if (waveformType === 'afib_rvr' || waveformType === 'afib_slow' || waveformType === 'afib_nvr') {
       const irregularities = waveformType === 'afib_rvr'
         ? [0.75, 0.95, 0.7, 0.85, 1.0, 0.72, 0.88, 0.78]
+        : waveformType === 'afib_nvr'
+        ? [0.85, 1.1, 0.9, 1.05, 0.95, 1.15, 0.88, 1.12]
         : [0.7, 1.3, 0.8, 1.1, 1.4, 0.9, 1.2, 0.75];
       const patternLength = irregularities.reduce((a, b) => a + b, 0) * ventricularIntervalPx;
       const posInPattern = offset % patternLength;
@@ -2631,35 +2773,36 @@ export default function RhythmStrip({
       return { beatNum: 0, rrInterval: ventricularIntervalPx };
     }
     else if (waveformType === 'sinus_pause') {
-      // Sinus pause: ~16 bpm during pause = 3.75× normal interval
-      // Pattern: beat1, beat2, PAUSE (3.75 intervals), beat3
-      const pauseIntervals = 3.75; // ~16 bpm at 60 bpm underlying
-      const patternLength = ventricularIntervalPx * (3 + pauseIntervals);
-      const patternNum = Math.floor(offset / patternLength);
-      const posInPattern = offset % patternLength;
+      // Sinus pause: 4 normal beats, then pause (3.75× interval), then 1 beat resumes
+      const pauseIntervals = 3.75;
+      const patternLength = ventricularIntervalPx * (5 + pauseIntervals);
+      // Same phase shift as drawing code so rate display matches visual
+      const phaseShift = ventricularIntervalPx * (4 + pauseIntervals);
+      const adjustedOffset = offset + phaseShift;
+      const patternNum = Math.floor(adjustedOffset / patternLength);
+      const posInPattern = adjustedOffset % patternLength;
 
-      // beat1 at 0, beat2 at 1.0, pause starts at 2.0, beat3 at 2.0 + 3.75
-      const beatPositions = [0, 1.0, 2.0, 2.0 + pauseIntervals];
-      const rrIntervals = [1.0, 1.0, pauseIntervals, 1.0]; // Pause shows ~16 bpm
+      // beat1 at 0, beat2 at 1.0, beat3 at 2.0, beat4 at 3.0, pause at 4.0, beat5 at 4.0 + 3.75
+      const beatPositions = [0, 1.0, 2.0, 3.0, 4.0, 4.0 + pauseIntervals];
+      const rrIntervals = [1.0, 1.0, 1.0, 1.0, pauseIntervals, 1.0]; // 4 normal, pause, 1 normal
 
       for (let i = beatPositions.length - 1; i >= 0; i--) {
         if (posInPattern >= beatPositions[i] * ventricularIntervalPx) {
-          return { beatNum: patternNum * 4 + i, rrInterval: rrIntervals[i] * ventricularIntervalPx };
+          return { beatNum: patternNum * 6 + i, rrInterval: rrIntervals[i] * ventricularIntervalPx };
         }
       }
-      return { beatNum: patternNum * 4, rrInterval: ventricularIntervalPx };
+      return { beatNum: patternNum * 6, rrInterval: ventricularIntervalPx };
     }
     else if (waveformType === 'sinus_arrest') {
-      // Sinus arrest: 60 bpm normal → 19 bpm during arrest
-      // 19 bpm = 60/19 = ~3.16 intervals
-      const arrestIntervals = 3.16;
+      // Sinus arrest: exactly 2 missed cycles (2× normal R-R)
+      const arrestIntervals = 2.0;
       const patternLength = ventricularIntervalPx * (3 + arrestIntervals);
       const patternNum = Math.floor(offset / patternLength);
       const posInPattern = offset % patternLength;
 
-      // beat1 at 0, beat2 at 1.0, arrest starts at 2.0, beat3 at 2.0 + 3.16
+      // beat1 at 0, beat2 at 1.0, arrest starts at 2.0, beat3 at 2.0 + 2.0
       const beatPositions = [0, 1.0, 2.0, 2.0 + arrestIntervals];
-      const rrIntervals = [1.0, 1.0, arrestIntervals, 1.0]; // Shows 60, 60, 19, 60
+      const rrIntervals = [1.0, 1.0, arrestIntervals, 1.0]; // Shows 55, 55, 27.5, 55 bpm
 
       for (let i = beatPositions.length - 1; i >= 0; i--) {
         if (posInPattern >= beatPositions[i] * ventricularIntervalPx) {
@@ -2961,7 +3104,7 @@ export default function RhythmStrip({
   // Calculate HR from RR interval in pixels
   const rrToHR = useCallback((rrPx: number): number => {
     const rrSeconds = rrPx / (speed * pixelsPerMm);
-    return Math.round(60 / rrSeconds);
+    return rrSeconds > 0 ? Math.round(60 / rrSeconds) : 0;
   }, [speed, pixelsPerMm]);
 
   // Draw caliper markers on the canvas
@@ -3040,11 +3183,12 @@ export default function RhythmStrip({
 
     const ctx = canvasRef.current.getContext('2d');
     if (ctx) {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       drawGrid(ctx);
       drawWaveform(ctx, offsetRef.current);
       drawCalipers(ctx);
     }
-  }, [caliperMode, width, drawGrid, drawWaveform, drawCalipers]);
+  }, [caliperMode, width, drawGrid, drawWaveform, drawCalipers, dpr]);
 
   // Reset calipers when rhythm or caliper mode changes
   useEffect(() => {
@@ -3075,6 +3219,7 @@ export default function RhythmStrip({
       setDisplayRate(rrToHR(qrsAtDetection.rrInterval));
     }
 
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawGrid(ctx);
     drawWaveform(ctx, offsetRef.current);
     drawCalipers(ctx);
@@ -3082,7 +3227,7 @@ export default function RhythmStrip({
     if (isRunning) {
       animationRef.current = requestAnimationFrame(animate);
     }
-  }, [speed, pixelsPerMm, drawGrid, drawWaveform, drawCalipers, isRunning, getQrsBeatAtPosition, rrToHR, detectionPoint]);
+  }, [speed, pixelsPerMm, drawGrid, drawWaveform, drawCalipers, isRunning, getQrsBeatAtPosition, rrToHR, detectionPoint, dpr]);
 
   useEffect(() => {
     if (isRunning) {
@@ -3100,36 +3245,41 @@ export default function RhythmStrip({
     };
   }, [isRunning, animate]);
 
-  // Clear grid cache when dimensions change
+  // Clear grid cache when dimensions or DPI change
   useEffect(() => {
     gridCanvasRef.current = null;
-  }, [width, height, pixelsPerMm]);
+  }, [width, height, pixelsPerMm, dpr]);
 
   useEffect(() => {
     if (!canvasRef.current) return;
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     drawGrid(ctx);
     drawWaveform(ctx, offsetRef.current);
     drawCalipers(ctx);
-  }, [drawGrid, drawWaveform, drawCalipers]);
+  }, [drawGrid, drawWaveform, drawCalipers, dpr]);
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative w-full">
       <canvas
         ref={canvasRef}
-        width={width}
-        height={height}
+        width={width * dpr}
+        height={height * dpr}
         className="border border-gray-300 rounded-lg shadow-md"
-        style={{ maxWidth: '100%', height: 'auto', cursor: caliperMode ? 'crosshair' : 'default' }}
+        style={{ width: responsive ? '100%' : `${width}px`, maxWidth: '100%', height: 'auto', cursor: caliperMode ? 'crosshair' : 'default' }}
         onClick={handleCanvasClick}
       />
-      <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-        {leadLabel}
-      </div>
-      <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
-        {speed} mm/sec | <span className="font-mono">{displayRate}</span> bpm
-      </div>
+      {showOverlays && (
+        <>
+          <div className="absolute top-2 left-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+            {leadLabel}
+          </div>
+          <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+            {speed} mm/sec | <span className="font-mono">{displayRate}</span> bpm
+          </div>
+        </>
+      )}
     </div>
   );
 }

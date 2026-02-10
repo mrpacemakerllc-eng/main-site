@@ -221,7 +221,7 @@ export default function VaultLanding() {
       {/* Rhythm Categories */}
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-white text-center mb-4">47 Essential Rhythms</h2>
+          <h2 className="text-3xl font-bold text-white text-center mb-4">49 Essential Rhythms</h2>
           <p className="text-slate-400 text-center mb-12 max-w-2xl mx-auto">
             From basic sinus rhythms to life-threatening arrhythmias - master them all
           </p>
@@ -362,7 +362,7 @@ export default function VaultLanding() {
                   <svg className="w-5 h-5 text-emerald-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
-                  All 47 rhythms unlocked
+                  All 49 rhythms unlocked
                 </li>
                 <li className="flex items-center text-slate-300">
                   <svg className="w-5 h-5 text-emerald-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -448,7 +448,7 @@ export default function VaultLanding() {
             </div>
             <span className="text-slate-400 text-sm">Live ECG Vault by Mr Pacemaker LLC</span>
           </div>
-          <p className="text-slate-500 text-sm">© 2025 Mr Pacemaker LLC. All rights reserved.</p>
+          <p className="text-slate-500 text-sm">© 2026 Mr Pacemaker LLC. All rights reserved.</p>
         </div>
       </footer>
     </div>

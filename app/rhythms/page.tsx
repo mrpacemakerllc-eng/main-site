@@ -9,6 +9,7 @@ import { Rhythm, rhythms, getQuizOptions, FREE_RHYTHM_IDS } from '../data/rhythm
 type Mode = 'learn' | 'quiz' | 'analyze';
 
 // Analysis answers for each rhythm
+// Analysis answers updated per 2018 HRS guidelines (NSR 50-100, brady <50)
 const rhythmAnalysis: Record<string, {
   rate: string;
   regularity: string;
@@ -16,29 +17,29 @@ const rhythmAnalysis: Record<string, {
   prInterval: string;
   qrsComplex: string;
 }> = {
-  'nsr': { rate: '60-100', regularity: 'Regular', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
+  'nsr': { rate: '50-100', regularity: 'Regular', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
   'sinus-tach': { rate: '>100', regularity: 'Regular', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
-  'sinus-brady': { rate: '<60', regularity: 'Regular', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
-  'sinus-arrhythmia': { rate: '60-100', regularity: 'Regularly irregular (varies with breathing)', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
+  'sinus-brady': { rate: '<50', regularity: 'Regular', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
+  'sinus-arrhythmia': { rate: '50-100', regularity: 'Regularly irregular (varies with breathing)', pWaves: 'Normal, upright', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
   'sinus-pause': { rate: 'Variable', regularity: 'Irregular (pause)', pWaves: 'Normal when present', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
   'sinus-arrest': { rate: 'Variable', regularity: 'Irregular (arrest = 2× P-P)', pWaves: 'Normal when present', prInterval: '0.12-0.20 sec', qrsComplex: 'Narrow (<0.12 sec)' },
-  'nsr-pac': { rate: '60-100', regularity: 'Regularly irregular (early beats)', pWaves: 'Abnormal before PAC', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
-  'nsr-pvc': { rate: '60-100', regularity: 'Regularly irregular (early beats)', pWaves: 'None before PVC', prInterval: 'None before PVC', qrsComplex: 'Wide (>0.12 sec) for PVC' },
-  'v-bigeminy': { rate: '60-100', regularity: 'Regularly irregular (N-PVC-N-PVC)', pWaves: 'Present before normal beats', prInterval: 'Normal before sinus beats', qrsComplex: 'Alternating narrow/wide' },
-  'v-trigeminy': { rate: '60-100', regularity: 'Regularly irregular (N-N-PVC)', pWaves: 'Present before normal beats', prInterval: 'Normal before sinus beats', qrsComplex: 'Every 3rd beat wide' },
-  'first-degree': { rate: '60-100', regularity: 'Regular', pWaves: 'Normal, upright', prInterval: '>0.20 sec (prolonged)', qrsComplex: 'Narrow (<0.12 sec)' },
-  'mobitz1': { rate: '60-100', regularity: 'Regularly irregular (grouped beating)', pWaves: 'More P than QRS', prInterval: 'Progressive lengthening', qrsComplex: 'Narrow (<0.12 sec)' },
-  'mobitz2': { rate: '60-100', regularity: 'Regularly irregular (dropped beats)', pWaves: 'More P than QRS', prInterval: 'Constant', qrsComplex: 'Often wide' },
+  'nsr-pac': { rate: '50-100', regularity: 'Regularly irregular (early beats)', pWaves: 'Abnormal before PAC', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
+  'nsr-pvc': { rate: '50-100', regularity: 'Regularly irregular (early beats)', pWaves: 'None before PVC', prInterval: 'None before PVC', qrsComplex: 'Wide (>0.12 sec) for PVC' },
+  'v-bigeminy': { rate: '50-100', regularity: 'Regularly irregular (N-PVC-N-PVC)', pWaves: 'Present before normal beats', prInterval: 'Normal before sinus beats', qrsComplex: 'Alternating narrow/wide' },
+  'v-trigeminy': { rate: '50-100', regularity: 'Regularly irregular (N-N-PVC)', pWaves: 'Present before normal beats', prInterval: 'Normal before sinus beats', qrsComplex: 'Every 3rd beat wide' },
+  'first-degree': { rate: '50-100', regularity: 'Regular', pWaves: 'Normal, upright', prInterval: '>0.20 sec (prolonged)', qrsComplex: 'Narrow (<0.12 sec)' },
+  'mobitz1': { rate: '50-100', regularity: 'Regularly irregular (grouped beating)', pWaves: 'More P than QRS', prInterval: 'Progressive lengthening', qrsComplex: 'Narrow (<0.12 sec)' },
+  'mobitz2': { rate: '50-100', regularity: 'Regularly irregular (dropped beats)', pWaves: 'More P than QRS', prInterval: 'Constant', qrsComplex: 'Often wide' },
   'block-2to1': { rate: '~38 (half atrial rate)', regularity: 'Regular', pWaves: '2 P waves per QRS', prInterval: 'Constant in conducted beats', qrsComplex: 'Narrow or Wide (determines type)' },
   'chb': { rate: '30-40', regularity: 'Regular (P and QRS independent)', pWaves: 'Present, dissociated', prInterval: 'Variable (no relationship)', qrsComplex: 'Wide (escape rhythm)' },
-  'wap': { rate: '60-100', regularity: 'Irregularly irregular', pWaves: '3+ different morphologies', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
+  'wap': { rate: '50-100', regularity: 'Irregularly irregular', pWaves: '3+ different morphologies', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
   'mat': { rate: '>100', regularity: 'Irregularly irregular', pWaves: '3+ different morphologies', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
   'atrial-tach': { rate: '100-250', regularity: 'Regular', pWaves: 'Abnormal morphology', prInterval: 'Variable', qrsComplex: 'Narrow (<0.12 sec)' },
   'junctional': { rate: '40-60', regularity: 'Regular', pWaves: 'Absent or inverted', prInterval: 'Short or absent', qrsComplex: 'Narrow (<0.12 sec)' },
   'accel-junctional': { rate: '60-100', regularity: 'Regular', pWaves: 'Absent or inverted', prInterval: 'Short or absent', qrsComplex: 'Narrow (<0.12 sec)' },
   'junctional-tach': { rate: '>100', regularity: 'Regular', pWaves: 'Absent or inverted', prInterval: 'Short or absent', qrsComplex: 'Narrow (<0.12 sec)' },
   'svt': { rate: '150-250', regularity: 'Regular', pWaves: 'Hidden in QRS/T', prInterval: 'Not measurable', qrsComplex: 'Narrow (<0.12 sec)' },
-  'afib-slow': { rate: '<60', regularity: 'Irregularly irregular', pWaves: 'Absent (fibrillatory)', prInterval: 'None', qrsComplex: 'Narrow (<0.12 sec)' },
+  'afib-slow': { rate: '<50', regularity: 'Irregularly irregular', pWaves: 'Absent (fibrillatory)', prInterval: 'None', qrsComplex: 'Narrow (<0.12 sec)' },
   'afib-rvr': { rate: '>100', regularity: 'Irregularly irregular', pWaves: 'Absent (fibrillatory)', prInterval: 'None', qrsComplex: 'Narrow (<0.12 sec)' },
   'aflutter-svr': { rate: '~50 (controlled)', regularity: 'Regular or irregular', pWaves: 'Flutter waves (sawtooth)', prInterval: 'None', qrsComplex: 'Narrow (<0.12 sec)' },
   'aflutter-rvr': { rate: '~150 (2:1 block)', regularity: 'Regular', pWaves: 'Flutter waves (sawtooth)', prInterval: 'None', qrsComplex: 'Narrow (<0.12 sec)' },
@@ -58,12 +59,12 @@ const rhythmAnalysis: Record<string, {
   'oversensing-atrial': { rate: 'Variable', regularity: 'Irregular (pauses)', pWaves: 'Absent when inhibited', prInterval: 'N/A', qrsComplex: 'Absent (inhibited)' },
   'oversensing-ventricular': { rate: 'Variable', regularity: 'Irregular (pauses)', pWaves: 'Present (native)', prInterval: 'Normal', qrsComplex: 'Absent (inhibited)' },
   'nsvt': { rate: '150-200', regularity: 'Regular (short run)', pWaves: 'Absent', prInterval: 'None', qrsComplex: 'Wide (>0.12 sec)' },
-  'v-couplet': { rate: '60-100', regularity: 'Irregular (paired PVCs)', pWaves: 'None before PVCs', prInterval: 'None before PVCs', qrsComplex: 'Wide for PVCs' },
-  'wpw': { rate: '60-100', regularity: 'Regular', pWaves: 'Normal', prInterval: 'Short (<0.12 sec)', qrsComplex: 'Wide with delta wave' },
-  'nsr-pjc': { rate: '60-100', regularity: 'Irregular (early beats)', pWaves: 'Absent or inverted before PJC', prInterval: 'Short or absent', qrsComplex: 'Narrow (<0.12 sec)' },
-  'blocked-pac': { rate: '60-100', regularity: 'Irregular (pause after early P)', pWaves: 'Early abnormal P without QRS', prInterval: 'N/A (blocked)', qrsComplex: 'Absent after early P' },
-  'lbbb': { rate: '60-100', regularity: 'Regular', pWaves: 'Normal', prInterval: '0.12-0.20 sec', qrsComplex: 'Wide (>0.12 sec), WiLLiaM' },
-  'rbbb': { rate: '60-100', regularity: 'Regular', pWaves: 'Normal', prInterval: '0.12-0.20 sec', qrsComplex: 'Wide (>0.12 sec), MaRRoW' },
+  'v-couplet': { rate: '50-100', regularity: 'Irregular (paired PVCs)', pWaves: 'None before PVCs', prInterval: 'None before PVCs', qrsComplex: 'Wide for PVCs' },
+  'wpw': { rate: '50-100', regularity: 'Regular', pWaves: 'Normal', prInterval: 'Short (<0.12 sec)', qrsComplex: 'Wide with delta wave' },
+  'nsr-pjc': { rate: '50-100', regularity: 'Irregular (early beats)', pWaves: 'Absent or inverted before PJC', prInterval: 'Short or absent', qrsComplex: 'Narrow (<0.12 sec)' },
+  'blocked-pac': { rate: '50-100', regularity: 'Irregular (pause after early P)', pWaves: 'Early abnormal P without QRS', prInterval: 'N/A (blocked)', qrsComplex: 'Absent after early P' },
+  'lbbb': { rate: '50-100', regularity: 'Regular', pWaves: 'Normal', prInterval: '0.12-0.20 sec', qrsComplex: 'Wide (>0.12 sec), WiLLiaM' },
+  'rbbb': { rate: '50-100', regularity: 'Regular', pWaves: 'Normal', prInterval: '0.12-0.20 sec', qrsComplex: 'Wide (>0.12 sec), MaRRoW' },
 };
 
 // Simple question pool per rhythm - each rhythm has multiple clinical questions
@@ -71,13 +72,13 @@ type QuizQuestion = { question: string; answer: string; distractors: string[]; e
 
 const rhythmQuestions: Record<string, QuizQuestion[]> = {
   'nsr': [
-    { question: 'What rhythm is this?', answer: 'Normal Sinus Rhythm', distractors: ['Sinus Bradycardia', 'Sinus Tachycardia', 'Junctional Rhythm'], explanation: 'NSR has regular rhythm, rate 60-100, upright P waves before each QRS with normal PR interval.' },
+    { question: 'What rhythm is this?', answer: 'Normal Sinus Rhythm', distractors: ['Sinus Bradycardia', 'Sinus Tachycardia', 'Junctional Rhythm'], explanation: 'NSR has regular rhythm, rate 50-100 (per 2018 HRS guidelines), upright P waves before each QRS with normal PR interval.' },
     { question: 'NSR originates from which pacemaker?', answer: 'SA node', distractors: ['AV node', 'Bundle of His', 'Purkinje fibers'], explanation: 'The SA node is the primary pacemaker of the heart, located in the right atrium.' },
     { question: 'Normal PR interval range?', answer: '0.12-0.20 seconds', distractors: ['0.08-0.12 seconds', '0.20-0.28 seconds', '0.30-0.40 seconds'], explanation: 'PR interval represents conduction from atria to ventricles. <0.12s suggests pre-excitation, >0.20s indicates first-degree AV block.' },
-    { question: 'NSR rate range?', answer: '60-100 bpm', distractors: ['40-60 bpm', '100-150 bpm', '50-90 bpm'], explanation: 'By definition, sinus rhythm with rate <60 is bradycardia, >100 is tachycardia.' },
+    { question: 'NSR rate range?', answer: '50-100 bpm', distractors: ['40-60 bpm', '100-150 bpm', '60-100 bpm'], explanation: 'Per 2018 HRS guidelines, NSR is 50-100 bpm. Rate <50 is bradycardia, >100 is tachycardia.' },
   ],
   'sinus-brady': [
-    { question: 'What rhythm is this?', answer: 'Sinus Bradycardia', distractors: ['Junctional Escape', 'Complete Heart Block', 'Normal Sinus Rhythm'], explanation: 'Sinus brady has all features of NSR but rate <60 bpm. Upright P waves distinguish it from junctional.' },
+    { question: 'What rhythm is this?', answer: 'Sinus Bradycardia', distractors: ['Junctional Escape', 'Complete Heart Block', 'Normal Sinus Rhythm'], explanation: 'Sinus brady has all features of NSR but rate <50 bpm (per 2018 HRS guidelines). Upright P waves distinguish it from junctional.' },
     { question: 'First-line drug for symptomatic sinus bradycardia?', answer: 'Atropine', distractors: ['Adenosine', 'Amiodarone', 'Epinephrine'], explanation: 'Atropine blocks vagal tone, increasing heart rate. Adenosine would slow it further!' },
     { question: 'Sinus brady differs from junctional by:', answer: 'Upright P waves present', distractors: ['No P waves', 'Wide QRS', 'Faster rate'], explanation: 'In sinus brady, the SA node is still the pacemaker so P waves are upright. Junctional has absent or inverted P waves.' },
     { question: 'When is pacing indicated for sinus bradycardia?', answer: 'When symptomatic (dizzy, syncope, hypotension)', distractors: ['Always', 'Never', 'Only if rate < 30'], explanation: 'Many people tolerate bradycardia well (athletes). Pacing is for symptomatic patients not responding to atropine.' },
@@ -90,10 +91,16 @@ const rhythmQuestions: Record<string, QuizQuestion[]> = {
     { question: 'Common causes of sinus tach include:', answer: 'Pain, fever, hypovolemia, anxiety', distractors: ['Sleep', 'Beta-blockers', 'Hypothermia'], explanation: 'Remember the causes with "PAINFADE": Pain, Anxiety, Infection, Need for O2, Fluids, Anemia, Drugs, Endocrine.' },
   ],
   'afib-slow': [
-    { question: 'What rhythm is this?', answer: 'AFib with Slow Ventricular Response', distractors: ['Sinus Bradycardia', 'Junctional Rhythm', 'Complete Heart Block'], explanation: 'AFib is irregularly irregular with NO P waves - just fibrillatory baseline. Slow response means rate <60.' },
+    { question: 'What rhythm is this?', answer: 'AFib with Slow Ventricular Response', distractors: ['Sinus Bradycardia', 'Junctional Rhythm', 'Complete Heart Block'], explanation: 'AFib is irregularly irregular with NO P waves - just fibrillatory baseline. Slow response means rate <50 (per 2018 HRS guidelines).' },
     { question: 'Hallmark of AFib on ECG:', answer: 'Irregularly irregular with no P waves', distractors: ['Regular rhythm', 'Sawtooth waves', 'Wide QRS'], explanation: 'The chaotic atrial activity produces fibrillatory waves and completely irregular R-R intervals.' },
     { question: 'Major complication of AFib requiring anticoagulation:', answer: 'Stroke', distractors: ['Heart attack', 'Kidney failure', 'Pneumonia'], explanation: 'Blood pools in non-contracting atria forming clots. These can embolize to the brain causing stroke.' },
     { question: 'If AFib is slow due to rate-control meds:', answer: 'Hold or reduce medications', distractors: ['Increase dose', 'Add another med', 'Cardiovert'], explanation: 'Slow AFib is often from too much beta-blocker or calcium channel blocker. Reduce or hold the meds.' },
+  ],
+  'afib-nvr': [
+    { question: 'What rhythm is this?', answer: 'AFib with Normal Ventricular Response', distractors: ['Normal Sinus Rhythm', 'Sinus Arrhythmia', 'AFib with Slow Ventricular Response'], explanation: 'AFib NVR is irregularly irregular with no P waves and a controlled rate of 50-100 bpm.' },
+    { question: 'AFib NVR differs from NSR by:', answer: 'Irregularly irregular with no P waves', distractors: ['Rate is different', 'QRS is wider', 'No difference'], explanation: 'NSR is regular with P waves. AFib NVR has the same rate range but is irregular with no P waves.' },
+    { question: 'AFib with normal ventricular response is the goal of:', answer: 'Rate control therapy', distractors: ['Rhythm control', 'Defibrillation', 'Pacing'], explanation: 'Rate control aims to keep AFib ventricular rate 50-100 bpm using beta-blockers, CCBs, or digoxin.' },
+    { question: 'Even with controlled rate, AFib patients need:', answer: 'Anticoagulation assessment (CHA₂DS₂-VASc)', distractors: ['No further treatment', 'Immediate cardioversion', 'Pacemaker'], explanation: 'AFib at any rate carries stroke risk. Anticoagulation is based on CHA₂DS₂-VASc score, not heart rate.' },
   ],
   'afib-rvr': [
     { question: 'What rhythm is this?', answer: 'AFib with Rapid Ventricular Response', distractors: ['SVT', 'Atrial Flutter', 'Ventricular Tachycardia'], explanation: 'AFib RVR is irregularly irregular with no P waves and rate >100. The irregularity helps distinguish from flutter.' },
@@ -142,7 +149,7 @@ const rhythmQuestions: Record<string, QuizQuestion[]> = {
     { question: 'What rhythm is this?', answer: 'Junctional Escape Rhythm', distractors: ['Sinus Bradycardia', 'Idioventricular Rhythm', 'AFib'], explanation: 'Junctional rhythm has narrow QRS (40-60 bpm) with absent, inverted, or retrograde P waves.' },
     { question: 'Junctional rhythm indicates:', answer: 'SA node has failed', distractors: ['Normal finding', 'Ventricular problem', 'Atrial problem'], explanation: 'Junctional rhythm is an escape rhythm - the AV junction takes over when the SA node fails.' },
     { question: 'P waves in junctional rhythm are:', answer: 'Absent, inverted, or retrograde', distractors: ['Upright and normal', 'Always present', 'Wide and tall'], explanation: 'Since impulse comes from AV junction, P waves are either hidden in QRS, inverted before QRS, or retrograde after QRS.' },
-    { question: 'Junctional escape rate:', answer: '40-60 bpm', distractors: ['60-100 bpm', '20-40 bpm', '100-150 bpm'], explanation: 'AV junction inherent rate is 40-60 bpm. SA node is 60-100, ventricles are 20-40.' },
+    { question: 'Junctional escape rate:', answer: '40-60 bpm', distractors: ['50-100 bpm', '20-40 bpm', '100-150 bpm'], explanation: 'AV junction inherent rate is 40-60 bpm. SA node is 50-100 (per 2018 HRS), ventricles are 20-40.' },
   ],
   'svt': [
     { question: 'What rhythm is this?', answer: 'SVT', distractors: ['Sinus Tachycardia', 'Atrial Flutter', 'VT'], explanation: 'SVT is a narrow complex, regular tachycardia (150-250 bpm) with P waves often hidden. Abrupt onset/offset.' },
@@ -469,8 +476,8 @@ function RhythmReferenceContent() {
   const [caliperMode, setCaliperMode] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  // Subscription state - fetched from API
-  const [isPro, setIsPro] = useState(false);
+  // Subscription state - fetched from API (default true for development)
+  const [isPro, setIsPro] = useState(true);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
 
   // Handle rhythm query parameter
@@ -487,15 +494,17 @@ function RhythmReferenceContent() {
   }, [searchParams]);
 
   // Fetch subscription status on mount
+  // NOTE: For development, keeping all rhythms unlocked (isPro = true)
   useEffect(() => {
     async function checkSubscription() {
       try {
         const res = await fetch('/api/vault/status');
         const data = await res.json();
-        setIsPro(data.isPro);
+        // Development: always keep isPro true to test all rhythms
+        setIsPro(true); // Was: setIsPro(data.isPro);
       } catch (error) {
         console.error('Failed to check subscription:', error);
-        setIsPro(false);
+        setIsPro(true); // Was: setIsPro(false);
       } finally {
         setSubscriptionLoading(false);
       }
@@ -504,13 +513,13 @@ function RhythmReferenceContent() {
   }, []);
 
   // Check if a rhythm is accessible
-  const isRhythmLocked = (rhythm: Rhythm) => !isPro && rhythm.premium;
+  const isRhythmLocked = (rhythm: Rhythm) => false; // Temporarily unlocked for user feedback
 
   // Navigation mode - 'sequential' for in-order, 'random' after clicking Random
   const [navMode, setNavMode] = useState<'sequential' | 'random'>('sequential');
 
   // Quiz state
-  const [quizPhase, setQuizPhase] = useState<'identify' | 'askMore' | 'clinical'>('identify');
+  const [quizPhase, setQuizPhase] = useState<'identify' | 'clinical'>('identify');
   const [askedQuestionIndices, setAskedQuestionIndices] = useState<number[]>([]);
   const [quizQuestion, setQuizQuestion] = useState<{ question: string; correctAnswer: string; options: string[]; explanation: string }>(() =>
     getIdentifyQuestion(rhythms[0].id, rhythms[0].name)
@@ -548,6 +557,7 @@ function RhythmReferenceContent() {
       }
 
       const currentIdx = rhythms.findIndex(r => r.id === selectedRhythm.id);
+      if (currentIdx === -1) return;
 
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
         e.preventDefault();
@@ -697,10 +707,6 @@ function RhythmReferenceContent() {
       });
     }
 
-    // After correct identification, check if we should offer more questions
-    if (correct && quizPhase === 'identify' && hasClinicalQuestions(selectedRhythm.id)) {
-      setQuizPhase('askMore');
-    }
   };
 
   const handleNextRandom = () => {
@@ -790,18 +796,30 @@ function RhythmReferenceContent() {
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
 
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [touchEndY, setTouchEndY] = useState<number | null>(null);
+
   const onTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length > 1) return; // Ignore multi-touch (pinch zoom)
     setTouchEnd(null);
+    setTouchEndY(null);
     setTouchStart(e.targetTouches[0].clientX);
+    setTouchStartY(e.targetTouches[0].clientY);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length > 1) return; // Ignore multi-touch (pinch zoom)
     setTouchEnd(e.targetTouches[0].clientX);
+    setTouchEndY(e.targetTouches[0].clientY);
   };
 
   const onTouchEnd = () => {
     if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
+    const distanceX = touchStart - touchEnd;
+    const distanceY = Math.abs((touchStartY || 0) - (touchEndY || 0));
+    // Only trigger swipe if horizontal movement is dominant (not pinch/scroll)
+    if (distanceY > Math.abs(distanceX) * 0.5) return;
+    const distance = distanceX;
     const isLeftSwipe = distance > minSwipeDistance;
     const isRightSwipe = distance < -minSwipeDistance;
 
@@ -858,8 +876,8 @@ function RhythmReferenceContent() {
         </div>
       </nav>
 
-      {/* Rotate hint - only on mobile portrait */}
-      <div className="sm:hidden portrait:flex hidden landscape:hidden items-center justify-center gap-2 bg-slate-800/80 py-1.5 px-3 text-xs text-slate-400 border-b border-slate-700">
+      {/* Rotate hint - iPhone only (max-w 430px portrait) */}
+      <div className="hidden max-[430px]:portrait:flex items-center justify-center gap-2 bg-slate-800/80 py-1.5 px-3 text-xs text-slate-400 border-b border-slate-700">
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
@@ -868,9 +886,9 @@ function RhythmReferenceContent() {
         <span>Swipe to navigate</span>
       </div>
 
-      <main className="max-w-5xl mx-auto px-2 sm:px-4 py-3 sm:py-6">
+      <main className="max-w-6xl mx-auto px-2 sm:px-4 py-3 sm:py-6 landscape:py-1">
         {/* Controls Row */}
-        <div className="bg-slate-800 rounded-xl border border-slate-700 p-3 sm:p-4 mb-4 sm:mb-6">
+        <div className="bg-slate-800 rounded-xl border border-slate-700 p-3 sm:p-4 mb-4 sm:mb-6 landscape:mb-2 landscape:p-2">
           {/* Mobile: Stack vertically. Desktop: Flex row */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
             {/* Mode Toggle */}
@@ -938,8 +956,8 @@ function RhythmReferenceContent() {
               Random
             </button>
           </div>
-          {/* Keyboard hint - only on desktop (hidden on phones/tablets) */}
-          <div className="hidden lg:block mt-3 pt-3 border-t border-slate-700 text-center">
+          {/* Keyboard hint - visible on tablet+ screens */}
+          <div className="hidden md:block mt-3 pt-3 border-t border-slate-700 text-center">
             <span className="text-xs text-slate-500">
               <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono">↑</kbd>
               <kbd className="px-1.5 py-0.5 bg-slate-700 rounded text-slate-400 font-mono ml-1">↓</kbd>
@@ -952,16 +970,16 @@ function RhythmReferenceContent() {
 
         {/* Rhythm Title (reference mode or after answering) */}
         {(mode === 'learn' || showFeedback || showAnalysisFeedback) && (
-          <div className="bg-slate-800 rounded-xl border border-slate-700 p-3 sm:p-6 mb-3 sm:mb-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-1 sm:mb-2">
-              <h1 className="text-base sm:text-3xl font-bold text-white">{selectedRhythm.name}</h1>
+          <div className="bg-slate-800 rounded-xl border border-slate-700 p-3 sm:p-6 mb-3 sm:mb-6 landscape:p-2 landscape:mb-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-2 mb-1 sm:mb-2 landscape:mb-0 landscape:flex-row landscape:items-center">
+              <h1 className="text-base sm:text-3xl font-bold text-white landscape:text-sm">{selectedRhythm.name}</h1>
               {selectedRhythm.pacingIndication && (
                 <span className="px-2 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-sm font-bold bg-red-500/20 text-red-400 border border-red-500/30 self-start sm:self-auto">
                   PACING
                 </span>
               )}
             </div>
-            <p className="text-slate-300 text-xs sm:text-base">{selectedRhythm.description}</p>
+            <p className="text-slate-300 text-xs sm:text-base landscape:hidden">{selectedRhythm.description}</p>
           </div>
         )}
 
@@ -975,12 +993,12 @@ function RhythmReferenceContent() {
 
         {/* ECG Strip - with swipe support on mobile */}
         <div
-          className="bg-white p-2 sm:p-4 rounded-xl shadow-lg mb-4 sm:mb-6 touch-pan-y"
+          className="bg-white p-2 sm:p-4 rounded-xl shadow-lg mb-4 sm:mb-6 landscape:mb-2 landscape:p-1 touch-pan-y"
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <div className="overflow-x-auto -mx-2 sm:mx-0 px-2 sm:px-0">
+          <div className="w-full">
             <RhythmStrip
               waveformType={selectedRhythm.waveform}
               heartRate={selectedRhythm.rate}
@@ -992,6 +1010,7 @@ function RhythmReferenceContent() {
               isRunning={isRunning}
               caliperMode={caliperMode}
               leadLabel={selectedRhythm.leadLabel}
+              responsive={true}
             />
           </div>
           <div className="flex justify-center gap-2 sm:gap-3 mt-3">
@@ -1021,9 +1040,23 @@ function RhythmReferenceContent() {
             <button
               onClick={() => {
                 const idx = rhythms.findIndex(r => r.id === selectedRhythm.id);
-                if (idx > 0) handleRhythmChange(rhythms[idx - 1].id);
+                // Find previous accessible rhythm (skip locked ones)
+                for (let i = idx - 1; i >= 0; i--) {
+                  const prevRhythm = rhythms[i];
+                  if (isPro || !prevRhythm.premium) {
+                    handleRhythmChange(prevRhythm.id);
+                    break;
+                  }
+                }
               }}
-              disabled={rhythms.findIndex(r => r.id === selectedRhythm.id) === 0}
+              disabled={(() => {
+                const idx = rhythms.findIndex(r => r.id === selectedRhythm.id);
+                // Disabled if no accessible rhythm before current
+                for (let i = idx - 1; i >= 0; i--) {
+                  if (isPro || !rhythms[i].premium) return false;
+                }
+                return true;
+              })()}
               className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 text-sm sm:text-base"
             >
               ← Prev
@@ -1031,9 +1064,23 @@ function RhythmReferenceContent() {
             <button
               onClick={() => {
                 const idx = rhythms.findIndex(r => r.id === selectedRhythm.id);
-                if (idx < rhythms.length - 1) handleRhythmChange(rhythms[idx + 1].id);
+                // Find next accessible rhythm (skip locked ones)
+                for (let i = idx + 1; i < rhythms.length; i++) {
+                  const nextRhythm = rhythms[i];
+                  if (isPro || !nextRhythm.premium) {
+                    handleRhythmChange(nextRhythm.id);
+                    break;
+                  }
+                }
               }}
-              disabled={rhythms.findIndex(r => r.id === selectedRhythm.id) === rhythms.length - 1}
+              disabled={(() => {
+                const idx = rhythms.findIndex(r => r.id === selectedRhythm.id);
+                // Disabled if no accessible rhythm after current
+                for (let i = idx + 1; i < rhythms.length; i++) {
+                  if (isPro || !rhythms[i].premium) return false;
+                }
+                return true;
+              })()}
               className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 text-sm sm:text-base"
             >
               Next →
@@ -1092,6 +1139,11 @@ function RhythmReferenceContent() {
               </div>
             </div>
 
+            {/* Guideline Note */}
+            <p className="text-xs text-slate-400 mb-3 text-center">
+              <span className="text-amber-400">Note:</span> Per 2018 HRS guidelines, NSR is 50-100 bpm (was 60-100). Sinus brady is &lt;50 bpm.
+            </p>
+
             {/* Question - always visible */}
             <div className={`${showFeedback ? (isCorrect ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-amber-500/10 border-amber-500/30') : 'bg-emerald-500/10 border-emerald-500/30'} border rounded-lg sm:rounded-xl p-3 sm:p-5 mb-3 sm:mb-5 text-center`}>
               <h2 className={`text-sm sm:text-2xl font-bold ${showFeedback ? (isCorrect ? 'text-emerald-400' : 'text-amber-400') : 'text-emerald-400'}`}>{quizQuestion.question}</h2>
@@ -1133,39 +1185,20 @@ function RhythmReferenceContent() {
                   <p className="text-slate-300 mt-2 text-xs sm:text-sm">{quizQuestion.explanation}</p>
                 </div>
 
-                {/* Ask if they want more questions after correct identification */}
-                {quizPhase === 'askMore' && (
-                  <div className="p-3 sm:p-4 rounded-lg bg-purple-500/20 border border-purple-500/30">
-                    <p className="text-purple-300 font-medium text-center text-sm sm:text-base">More questions about this rhythm?</p>
-                  </div>
-                )}
-
-                {/* Action buttons */}
+                {/* Action buttons - always show next question + next rhythm */}
                 <div className="flex gap-2 sm:gap-3">
-                  {quizPhase === 'askMore' ? (
-                    <>
-                      <button onClick={handleMoreQuestions} className="flex-1 py-2.5 sm:py-3 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 text-sm sm:text-base">
-                        More Questions
-                      </button>
-                      <button onClick={handleNextRandom} className="flex-1 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-lg font-semibold hover:from-emerald-600 hover:to-cyan-600 text-sm sm:text-base">
-                        Next Rhythm
-                      </button>
-                    </>
-                  ) : quizPhase === 'clinical' && isCorrect && hasClinicalQuestions(selectedRhythm.id) && getClinicalQuestion(selectedRhythm.id, askedQuestionIndices) ? (
-                    <>
-                      <button onClick={handleMoreQuestions} className="flex-1 py-2.5 sm:py-3 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 text-sm sm:text-base">
-                        Another Question
-                      </button>
-                      <button onClick={handleNextRandom} className="flex-1 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-lg font-semibold hover:from-emerald-600 hover:to-cyan-600 text-sm sm:text-base">
-                        Next Rhythm
-                      </button>
-                    </>
+                  {hasClinicalQuestions(selectedRhythm.id) && getClinicalQuestion(selectedRhythm.id, askedQuestionIndices) ? (
+                    <button onClick={handleMoreQuestions} className="flex-1 py-2.5 sm:py-3 bg-purple-500 text-white rounded-lg font-semibold hover:bg-purple-600 text-sm sm:text-base">
+                      Next Question
+                    </button>
                   ) : (
-                    <>
-                      <button onClick={handleTryAgain} className="flex-1 py-2.5 sm:py-3 bg-slate-600 text-white rounded-lg font-semibold hover:bg-slate-500 text-sm sm:text-base">Try Again</button>
-                      <button onClick={handleNextRandom} className="flex-1 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-lg font-semibold hover:from-emerald-600 hover:to-cyan-600 text-sm sm:text-base">Next Random</button>
-                    </>
+                    <button onClick={handleTryAgain} className="flex-1 py-2.5 sm:py-3 bg-slate-600 text-white rounded-lg font-semibold hover:bg-slate-500 text-sm sm:text-base">
+                      Try Again
+                    </button>
                   )}
+                  <button onClick={handleNextRandom} className="flex-1 py-2.5 sm:py-3 bg-gradient-to-r from-emerald-500 to-cyan-500 text-white rounded-lg font-semibold hover:from-emerald-600 hover:to-cyan-600 text-sm sm:text-base">
+                    Next Rhythm
+                  </button>
                 </div>
               </div>
             )}
@@ -1176,6 +1209,9 @@ function RhythmReferenceContent() {
         {mode === 'analyze' && (
           <div className="bg-slate-800 p-4 sm:p-6 rounded-xl border border-slate-700 mb-4 sm:mb-6">
             <h3 className="text-base sm:text-lg font-semibold text-white mb-3 sm:mb-4">Fill in your analysis:</h3>
+            <p className="text-xs text-slate-400 mb-3 -mt-1">
+              <span className="text-amber-400">Note:</span> Per 2018 HRS guidelines, normal sinus rhythm is now 50-100 bpm (previously 60-100). Sinus bradycardia is &lt;50 bpm.
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
               {/* Rhythm Name */}
               <div>
@@ -1201,7 +1237,7 @@ function RhythmReferenceContent() {
                   value={analysisAnswers.rate}
                   onChange={(e) => setAnalysisAnswers({...analysisAnswers, rate: e.target.value})}
                   disabled={showAnalysisFeedback}
-                  placeholder="e.g., 60-100"
+                  placeholder="e.g., 50-100"
                   className={`w-full px-4 py-2 border border-slate-600 rounded-lg bg-slate-700 text-white placeholder-slate-400 ${showAnalysisFeedback ? 'opacity-60' : ''}`}
                 />
                 {showAnalysisFeedback && (
@@ -1357,6 +1393,26 @@ function RhythmReferenceContent() {
                   </div>
                 );
               })}
+
+              {/* Guideline Reference Link */}
+              {selectedRhythm.guidelineRef && (
+                <div className="mt-6 pt-4 border-t border-slate-700">
+                  <a
+                    href={selectedRhythm.guidelineRef.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <span>{selectedRhythm.guidelineRef.title}</span>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1365,7 +1421,7 @@ function RhythmReferenceContent() {
 
       {/* Disclaimer */}
       <div className="bg-slate-900/80 border-t border-slate-800 py-6 mt-12">
-        <div className="max-w-4xl mx-auto px-4">
+        <div className="max-w-6xl mx-auto px-4">
           <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 bg-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -1382,8 +1438,8 @@ function RhythmReferenceContent() {
       </div>
 
       <footer className="bg-slate-950 border-t border-slate-800 py-6">
-        <div className="max-w-5xl mx-auto px-4 text-center text-slate-500 text-sm">
-          <p>&copy; 2025 Mr Pacemaker LLC</p>
+        <div className="max-w-6xl mx-auto px-4 text-center text-slate-500 text-sm">
+          <p>&copy; 2026 Mr Pacemaker LLC</p>
         </div>
       </footer>
 
@@ -1397,7 +1453,7 @@ function RhythmReferenceContent() {
               </div>
               <h3 className="text-2xl font-bold text-white mb-2">Unlock All Rhythms</h3>
               <p className="text-slate-400 mb-6">
-                Get access to all 46 ECG rhythms including AV blocks, atrial arrhythmias, and ventricular rhythms.
+                Get access to all 49 ECG rhythms including AV blocks, atrial arrhythmias, and ventricular rhythms.
               </p>
 
               <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-xl p-4 mb-6 border border-emerald-500/30">

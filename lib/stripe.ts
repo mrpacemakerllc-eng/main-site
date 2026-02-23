@@ -4,10 +4,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("STRIPE_SECRET_KEY is not set in environment variables")
 }
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-09-30.clover",
-  typescript: true,
-})
+export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY)
 
 export const STRIPE_CONFIG = {
   COURSE_PRICE: 19900, // $199.00 in cents

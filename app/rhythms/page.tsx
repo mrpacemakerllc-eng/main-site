@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import RhythmStrip from '../components/RhythmStrip';
 import { Rhythm, rhythms, getQuizOptions, FREE_RHYTHM_IDS } from '../data/rhythms';
 
@@ -470,15 +471,52 @@ function shuffleArray<T>(array: T[]): T[] {
 
 function RhythmReferenceContent() {
   const searchParams = useSearchParams();
+  const { data: session } = useSession();
   const [mode, setMode] = useState<Mode>('learn');
   const [selectedRhythm, setSelectedRhythm] = useState<Rhythm>(rhythms[0]);
   const [isRunning, setIsRunning] = useState(true);
   const [caliperMode, setCaliperMode] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
-  // Subscription state - fetched from API (default true for development)
-  const [isPro, setIsPro] = useState(true);
+  // Subscription state - fetched from API
+  const [isPro, setIsPro] = useState(false);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+
+  // Direct checkout handler - goes straight to Stripe
+  const handleDirectCheckout = async () => {
+    if (!session) {
+      // Not logged in - redirect to login with return URL
+      window.location.href = '/vault/login?callbackUrl=/rhythms?upgrade=true';
+      return;
+    }
+
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch('/api/vault/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Failed to create checkout');
+      }
+    } catch (error) {
+      alert('Failed to start checkout');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  // Auto-open upgrade modal if returning from login
+  useEffect(() => {
+    const upgrade = searchParams.get('upgrade');
+    if (upgrade === 'true' && session) {
+      handleDirectCheckout();
+    }
+  }, [session, searchParams]);
 
   // Handle rhythm query parameter
   useEffect(() => {
@@ -494,17 +532,15 @@ function RhythmReferenceContent() {
   }, [searchParams]);
 
   // Fetch subscription status on mount
-  // NOTE: For development, keeping all rhythms unlocked (isPro = true)
   useEffect(() => {
     async function checkSubscription() {
       try {
         const res = await fetch('/api/vault/status');
         const data = await res.json();
-        // Development: always keep isPro true to test all rhythms
-        setIsPro(true); // Was: setIsPro(data.isPro);
+        setIsPro(data.isPro);
       } catch (error) {
         console.error('Failed to check subscription:', error);
-        setIsPro(true); // Was: setIsPro(false);
+        setIsPro(false);
       } finally {
         setSubscriptionLoading(false);
       }
@@ -512,8 +548,8 @@ function RhythmReferenceContent() {
     checkSubscription();
   }, []);
 
-  // Check if a rhythm is accessible
-  const isRhythmLocked = (rhythm: Rhythm) => false; // Temporarily unlocked for user feedback
+  // Check if a rhythm is accessible (free rhythms: NSR, Sinus Brady, Mobitz I)
+  const isRhythmLocked = (rhythm: Rhythm) => !isPro && rhythm.premium;
 
   // Navigation mode - 'sequential' for in-order, 'random' after clicking Random
   const [navMode, setNavMode] = useState<'sequential' | 'random'>('sequential');
@@ -868,13 +904,48 @@ function RhythmReferenceContent() {
             <div className="flex items-center">
               <Link href="/" className="flex items-center">
                 <h1 className="text-lg sm:text-2xl font-bold text-white">ECG Vault</h1>
-                <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs font-semibold rounded-full">FREE</span>
+                {isPro ? (
+                  <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] sm:text-xs font-semibold rounded-full">PRO</span>
+                ) : (
+                  <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs font-semibold rounded-full">FREE</span>
+                )}
               </Link>
             </div>
-            <span className="text-xs sm:text-sm text-slate-400 hidden xs:inline">Mr Pacemaker</span>
+            {!isPro && !subscriptionLoading && (
+              <button
+                onClick={handleDirectCheckout}
+                disabled={checkoutLoading}
+                className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold hover:from-emerald-600 hover:to-cyan-600 transition"
+              >
+                {checkoutLoading ? '...' : 'Go Pro $9.99/mo'}
+              </button>
+            )}
+            {isPro && <span className="text-xs sm:text-sm text-slate-400 hidden xs:inline">Mr Pacemaker</span>}
           </div>
         </div>
       </nav>
+
+      {/* Free user upgrade banner */}
+      {!isPro && !subscriptionLoading && (
+        <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-amber-500/20 py-2 px-4">
+          <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-amber-400 font-medium">Free Plan</span>
+              <span className="text-slate-400">•</span>
+              <span className="text-slate-400">3 of 49 rhythms</span>
+              <span className="text-slate-400 hidden sm:inline">•</span>
+              <span className="text-slate-400 hidden sm:inline">Limited clinical info</span>
+            </div>
+            <button
+              onClick={handleDirectCheckout}
+              disabled={checkoutLoading}
+              className="bg-amber-500 hover:bg-amber-400 text-black px-3 py-1 rounded-lg text-sm font-semibold transition whitespace-nowrap"
+            >
+              Unlock All →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Rotate hint - iPhone only (max-w 430px portrait) */}
       <div className="hidden max-[430px]:portrait:flex items-center justify-center gap-2 bg-slate-800/80 py-1.5 px-3 text-xs text-slate-400 border-b border-slate-700">
@@ -1330,8 +1401,10 @@ function RhythmReferenceContent() {
         {(mode === 'learn' || showFeedback || showAnalysisFeedback) && (
           <div className="bg-slate-800 rounded-xl border border-slate-700 p-4 sm:p-6">
             <h2 className="text-lg sm:text-xl font-semibold text-white mb-4 sm:mb-5">Clinical Information</h2>
-            <div className="space-y-5">
+            <div className="space-y-5 relative">
               {selectedRhythm.explanation.split(/\n\n+/).filter(s => s.trim()).map((block, idx) => {
+                // For free users: show first 2 blocks as teaser, blur the rest
+                const isBlurred = !isPro && idx > 1;
                 const lines = block.split('\n').map(l => l.trimEnd());
                 const firstLine = lines[0].trim();
 
@@ -1354,6 +1427,42 @@ function RhythmReferenceContent() {
 
                 const [borderClass, textClass] = accent.split(' ');
                 const bodyLines = isHeader ? lines.slice(1).filter(l => l.trim()) : lines.filter(l => l.trim());
+
+                // If blurred for free users, show compelling upgrade prompt
+                if (isBlurred && idx === 2) {
+                  return (
+                    <div key={idx} className="relative mt-4">
+                      {/* Blurred preview of what's locked */}
+                      <div className="blur-[6px] select-none pointer-events-none opacity-60">
+                        <div className="space-y-3">
+                          <div className="pl-4 border-l-[3px] border-red-500/50">
+                            <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase mb-2 text-red-400">PACING INDICATION</h3>
+                            <p className="text-slate-300 text-[14px]">Critical clinical guidance...</p>
+                          </div>
+                          <div className="pl-4 border-l-[3px] border-emerald-500/50">
+                            <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase mb-2 text-emerald-400">TREATMENT</h3>
+                            <p className="text-slate-300 text-[14px]">Management protocols...</p>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Upgrade CTA overlay */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="bg-slate-900/95 rounded-xl p-5 text-center border border-slate-700 shadow-xl max-w-sm">
+                          <p className="text-amber-400 text-xs font-semibold mb-2">PRO CONTENT</p>
+                          <p className="text-white font-semibold mb-1">Unlock the full clinical guide</p>
+                          <p className="text-slate-400 text-sm mb-4">Pacing indications, treatment protocols, and key differentiators</p>
+                          <button
+                            onClick={() => setShowUpgradeModal(true)}
+                            className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-2.5 rounded-lg font-semibold hover:from-emerald-600 hover:to-cyan-600 transition"
+                          >
+                            Upgrade to Pro — $9.99/mo
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+                if (isBlurred) return null; // Hide other blurred sections
 
                 return (
                   <div key={idx} className={isHeader ? `pl-4 border-l-[3px] ${borderClass}` : ''}>
@@ -1448,29 +1557,51 @@ function RhythmReferenceContent() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-700">
             <div className="text-center">
-              <div className="w-16 h-16 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">🔒</span>
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">Unlock All Rhythms</h3>
-              <p className="text-slate-400 mb-6">
-                Get access to all 49 ECG rhythms including AV blocks, atrial arrhythmias, and ventricular rhythms.
+              <h3 className="text-2xl font-bold text-white mb-2">Unlock All 49 Rhythms</h3>
+              <p className="text-slate-400 mb-4">
+                Master AFib, V-Tach, heart blocks, paced rhythms, and more.
               </p>
 
-              <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-xl p-4 mb-6 border border-emerald-500/30">
+              {/* What's included */}
+              <div className="text-left bg-slate-900/50 rounded-lg p-4 mb-4">
+                <p className="text-sm font-medium text-slate-300 mb-2">Pro includes:</p>
+                <ul className="text-sm text-slate-400 space-y-1">
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-400">✓</span> All 49 animated rhythms
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-400">✓</span> Quiz mode with scoring
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-400">✓</span> Analysis practice mode
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-emerald-400">✓</span> EP-reviewed explanations
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-xl p-4 mb-4 border border-emerald-500/30">
                 <div className="text-3xl font-bold text-emerald-400 mb-1">$9.99<span className="text-lg font-normal text-slate-400">/month</span></div>
-                <p className="text-sm text-slate-400">Cancel anytime</p>
+                <p className="text-sm text-slate-400">Cancel anytime · No commitment</p>
               </div>
 
               <div className="space-y-3">
-                <Link
-                  href="/vault"
-                  className="block w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-3 rounded-lg font-semibold hover:from-emerald-600 hover:to-cyan-600 transition"
+                <button
+                  onClick={handleDirectCheckout}
+                  disabled={checkoutLoading}
+                  className="block w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-3.5 rounded-lg font-semibold hover:from-emerald-600 hover:to-cyan-600 transition disabled:opacity-50 text-lg"
                 >
-                  Upgrade to Pro
-                </Link>
+                  {checkoutLoading ? 'Loading...' : 'Subscribe Now'}
+                </button>
                 <button
                   onClick={() => setShowUpgradeModal(false)}
-                  className="block w-full text-slate-400 py-2 hover:text-slate-200 transition"
+                  className="block w-full text-slate-500 py-2 hover:text-slate-300 transition text-sm"
                 >
                   Continue with Free
                 </button>

@@ -41,7 +41,7 @@ export default function Home() {
 
       {/* Hero — left-aligned, compact */}
       <section className="max-w-3xl mx-auto px-5 pt-6 pb-6">
-        <p className="text-emerald-400 text-sm font-medium mb-2">49 animated rhythms &middot; Free</p>
+        <p className="text-emerald-400 text-sm font-medium mb-2">49 animated rhythms &middot; 3 Free &middot; Full access $9.99/mo</p>
 
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-[1.15] mb-3">
           Learn ECG rhythms<br />
@@ -52,12 +52,20 @@ export default function Home() {
           Interactive rhythm strips at clinical speed. Quiz yourself, analyze patterns, and build confidence.
         </p>
 
-        <Link
-          href="/rhythms"
-          className="inline-block bg-emerald-500 text-white text-base px-8 py-3.5 rounded-xl font-semibold hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/25"
-        >
-          Start practicing
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/rhythms"
+            className="inline-block bg-emerald-500 text-white text-base px-8 py-3.5 rounded-xl font-semibold hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/25"
+          >
+            Try free rhythms
+          </Link>
+          <Link
+            href="/vault"
+            className="inline-block bg-white text-slate-900 text-base px-8 py-3.5 rounded-xl font-semibold hover:bg-slate-100 transition"
+          >
+            Subscribe $9.99/mo
+          </Link>
+        </div>
       </section>
 
       {/* ECG Carousel */}
@@ -78,7 +86,7 @@ export default function Home() {
           </div>
           <div className="flex items-center justify-between mt-3">
             <div>
-              <p className="text-emerald-400 text-xs font-medium">{rhythm.name} &middot; {rhythm.rate} bpm &middot; 25 mm/sec</p>
+              <p className="text-emerald-400 text-xs font-medium">{rhythm.name}</p>
               <p className="text-slate-500 text-xs mt-0.5">{rhythm.description}</p>
             </div>
             <div className="flex items-center gap-2">
@@ -217,7 +225,7 @@ export default function Home() {
       {/* CTA */}
       <section className="max-w-3xl mx-auto px-5 py-10">
         <h2 className="text-2xl font-bold mb-3">Ready?</h2>
-        <p className="text-slate-400 text-sm mb-6">No account needed. Just open and start.</p>
+        <p className="text-slate-400 text-sm mb-6">Try 3 rhythms free. Unlock all 49 for $9.99/month.</p>
         <Link
           href="/rhythms"
           className="inline-block bg-white text-slate-900 text-base px-6 py-3 rounded-xl font-semibold hover:bg-slate-100 transition"

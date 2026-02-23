@@ -76,13 +76,16 @@ export default function RhythmStrip({
   }, [responsive]);
 
   // Use container width if responsive, otherwise use prop
-  const width = responsive && containerWidth ? containerWidth : propWidth;
-  // Scale height proportionally when responsive
-  const height = responsive && containerWidth ? Math.round(propHeight * (containerWidth / propWidth)) : propHeight;
+  // Cap at 1000px to prevent oversized ECG on large screens
+  const width = responsive && containerWidth ? Math.min(containerWidth, 1000) : propWidth;
+  // Scale height proportionally when responsive, but cap max height at 250px
+  const height = responsive && containerWidth
+    ? Math.min(250, Math.round(propHeight * (Math.min(containerWidth, 1000) / propWidth)))
+    : propHeight;
 
   // Center baseline between Lead II label (top ~35px) and Mr. Pacemaker watermark (bottom ~30px)
   // Offset down from center to account for R waves being taller than S waves
-  // Snap to nearest grid line so isoelectric line sits exactly on a red horizontal line
+  // Snap exactly to a grid line so isoelectric line sits on the red horizontal
   const rawBaselineY = height / 2 + pixelsPerMm * 5;
   const baselineY = Math.round(rawBaselineY / pixelsPerMm) * pixelsPerMm;
   const amplitudeScale = height * 0.32; // Slightly reduced to ensure no overlap
@@ -175,13 +178,10 @@ export default function RhythmStrip({
     // ST segment (isoelectric)
     ctx.lineTo(stEndX, baselineY);
 
-    // T wave - asymmetric broad curve (peaks at ~40%, wider than P wave)
+    // T wave - symmetrical rounded curve (like P wave but broader)
     for (let t = 0; t <= 1; t += 0.05) {
       const x = stEndX + t * fixedTWidth;
-      const tShape = t < 0.4
-        ? Math.sin(t / 0.4 * Math.PI / 2)
-        : Math.cos((t - 0.4) / 0.6 * Math.PI / 2);
-      const y = baselineY - tHeight * tShape;
+      const y = baselineY - tHeight * Math.sin(t * Math.PI);
       ctx.lineTo(x, y);
     }
     // Explicit return to baseline after T wave (avoid floating-point drift)

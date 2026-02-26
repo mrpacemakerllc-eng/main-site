@@ -71,19 +71,29 @@ export async function POST(req: NextRequest) {
 }
 
 async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
+  console.log("handleCheckoutComplete called")
+  console.log("Session metadata:", JSON.stringify(session.metadata))
+  console.log("Session subscription:", session.subscription)
+  console.log("Session customer:", session.customer)
+
   const { userId, courseId, paymentType, productId } = session.metadata || {}
+  console.log("Extracted - userId:", userId, "productId:", productId)
 
   // Handle ECG Vault subscription
   if (productId === STRIPE_CONFIG.ECG_VAULT_PRODUCT_ID) {
+    console.log("ECG Vault subscription detected")
+
     if (!userId) {
       console.error("Missing userId for vault subscription")
       return
     }
 
     // Fetch subscription details from Stripe
+    console.log("Fetching subscription from Stripe:", session.subscription)
     const stripeSubscription = await stripe.subscriptions.retrieve(
       session.subscription as string
     ) as unknown as { current_period_start: number; current_period_end: number }
+    console.log("Stripe subscription retrieved")
 
     // Update subscription record
     await prisma.subscription.upsert({

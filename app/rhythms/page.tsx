@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import RhythmStrip from '../components/RhythmStrip';
 import { Rhythm, rhythms, getQuizOptions, FREE_RHYTHM_IDS } from '../data/rhythms';
 
@@ -478,16 +478,17 @@ function RhythmReferenceContent() {
   const [caliperMode, setCaliperMode] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('monthly');
 
   // Subscription state - fetched from API
   const [isPro, setIsPro] = useState(false);
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
 
   // Direct checkout handler - goes straight to Stripe
-  const handleDirectCheckout = async () => {
+  const handleDirectCheckout = async (plan: 'monthly' | 'annual' = selectedPlan) => {
     if (!session) {
-      // Not logged in - redirect to login with return URL
-      window.location.href = '/vault/login?callbackUrl=/rhythms?upgrade=true';
+      // Not logged in - redirect to register with checkout flow
+      window.location.href = `/vault/register?checkout=true&plan=${plan}`;
       return;
     }
 
@@ -496,6 +497,8 @@ function RhythmReferenceContent() {
       const res = await fetch('/api/vault/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ plan }),
       });
       const data = await res.json();
       if (data.url) {
@@ -510,11 +513,30 @@ function RhythmReferenceContent() {
     }
   };
 
+  // Handle manage subscription - opens Stripe portal
+  const handleManageSubscription = async () => {
+    try {
+      const res = await fetch('/api/vault/portal', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Failed to open subscription portal');
+      }
+    } catch (error) {
+      alert('Failed to open subscription portal');
+    }
+  };
+
   // Auto-open upgrade modal if returning from login
   useEffect(() => {
     const upgrade = searchParams.get('upgrade');
+    const planParam = searchParams.get('plan') as 'monthly' | 'annual' | null;
     if (upgrade === 'true' && session) {
-      handleDirectCheckout();
+      handleDirectCheckout(planParam || 'monthly');
     }
   }, [session, searchParams]);
 
@@ -911,16 +933,33 @@ function RhythmReferenceContent() {
                 )}
               </Link>
             </div>
-            {!isPro && !subscriptionLoading && (
-              <button
-                onClick={handleDirectCheckout}
-                disabled={checkoutLoading}
-                className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold hover:from-emerald-600 hover:to-cyan-600 transition"
-              >
-                {checkoutLoading ? '...' : 'Go Pro $9.99/mo'}
-              </button>
-            )}
-            {isPro && <span className="text-xs sm:text-sm text-slate-400 hidden xs:inline">Mr Pacemaker</span>}
+            <div className="flex items-center gap-2 sm:gap-3">
+              {!isPro && !subscriptionLoading && (
+                <button
+                  onClick={() => setShowUpgradeModal(true)}
+                  disabled={checkoutLoading}
+                  className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold hover:from-emerald-600 hover:to-cyan-600 transition"
+                >
+                  {checkoutLoading ? '...' : 'Go Pro'}
+                </button>
+              )}
+              {isPro && (
+                <button
+                  onClick={handleManageSubscription}
+                  className="text-xs sm:text-sm text-amber-400 hover:text-amber-300 transition"
+                >
+                  Manage
+                </button>
+              )}
+              {session && (
+                <button
+                  onClick={() => signOut({ callbackUrl: '/rhythms' })}
+                  className="text-xs text-slate-500 hover:text-slate-300 transition"
+                >
+                  Logout
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </nav>
@@ -930,16 +969,16 @@ function RhythmReferenceContent() {
         <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-amber-500/20 py-2 px-4">
           <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-amber-400 font-medium">Free Plan</span>
+              <span className="text-amber-400 font-medium">🔒 Free Plan</span>
               <span className="text-slate-400">•</span>
-              <span className="text-slate-400">3 of 49 rhythms</span>
+              <span className="text-slate-300">3 of 49 rhythms</span>
               <span className="text-slate-400 hidden sm:inline">•</span>
-              <span className="text-slate-400 hidden sm:inline">Limited clinical info</span>
+              <span className="text-slate-300 hidden sm:inline">Unlock causes, treatments & clinical pearls</span>
             </div>
             <button
-              onClick={handleDirectCheckout}
+              onClick={() => setShowUpgradeModal(true)}
               disabled={checkoutLoading}
-              className="bg-amber-500 hover:bg-amber-400 text-black px-3 py-1 rounded-lg text-sm font-semibold transition whitespace-nowrap"
+              className="bg-amber-500 hover:bg-amber-400 text-black px-3 py-1 rounded-lg text-sm font-semibold transition whitespace-nowrap animate-pulse"
             >
               Unlock All →
             </button>
@@ -1435,28 +1474,47 @@ function RhythmReferenceContent() {
                       {/* Blurred preview of what's locked */}
                       <div className="blur-[6px] select-none pointer-events-none opacity-60">
                         <div className="space-y-3">
-                          <div className="pl-4 border-l-[3px] border-red-500/50">
-                            <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase mb-2 text-red-400">PACING INDICATION</h3>
-                            <p className="text-slate-300 text-[14px]">Critical clinical guidance...</p>
+                          <div className="pl-4 border-l-[3px] border-orange-500/50">
+                            <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase mb-2 text-orange-400">CAUSES</h3>
+                            <p className="text-slate-300 text-[14px]">Underlying etiologies and risk factors...</p>
                           </div>
                           <div className="pl-4 border-l-[3px] border-emerald-500/50">
                             <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase mb-2 text-emerald-400">TREATMENT</h3>
-                            <p className="text-slate-300 text-[14px]">Management protocols...</p>
+                            <p className="text-slate-300 text-[14px]">Step-by-step management protocols...</p>
+                          </div>
+                          <div className="pl-4 border-l-[3px] border-red-500/50">
+                            <h3 className="text-[11px] font-bold tracking-[0.15em] uppercase mb-2 text-red-400">CLINICAL PEARLS</h3>
+                            <p className="text-slate-300 text-[14px]">Expert tips and key differentiators...</p>
                           </div>
                         </div>
                       </div>
                       {/* Upgrade CTA overlay */}
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="bg-slate-900/95 rounded-xl p-5 text-center border border-slate-700 shadow-xl max-w-sm">
-                          <p className="text-amber-400 text-xs font-semibold mb-2">PRO CONTENT</p>
-                          <p className="text-white font-semibold mb-1">Unlock the full clinical guide</p>
-                          <p className="text-slate-400 text-sm mb-4">Pacing indications, treatment protocols, and key differentiators</p>
+                        <div className="bg-slate-900/95 rounded-xl p-5 text-center border border-amber-500/30 shadow-xl max-w-sm">
+                          <div className="text-amber-400 text-2xl mb-2">🔓</div>
+                          <p className="text-white font-bold text-lg mb-2">What You're Missing</p>
+                          <ul className="text-left text-slate-300 text-sm mb-4 space-y-1.5">
+                            <li className="flex items-start gap-2">
+                              <span className="text-orange-400">•</span>
+                              <span><strong className="text-white">Causes:</strong> Why this rhythm happens</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-emerald-400">•</span>
+                              <span><strong className="text-white">Treatment:</strong> How to manage it</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-red-400">•</span>
+                              <span><strong className="text-white">Clinical Pearls:</strong> Expert insights</span>
+                            </li>
+                          </ul>
                           <button
                             onClick={() => setShowUpgradeModal(true)}
-                            className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-4 py-2.5 rounded-lg font-semibold hover:from-emerald-600 hover:to-cyan-600 transition"
+                            disabled={checkoutLoading}
+                            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 text-black px-4 py-2.5 rounded-lg font-bold hover:from-amber-400 hover:to-orange-400 transition"
                           >
-                            Upgrade to Pro — $9.99/mo
+                            {checkoutLoading ? 'Loading...' : 'Unlock Full Access'}
                           </button>
+                          <p className="text-slate-500 text-xs mt-2">From $9.99/mo · Cancel anytime</p>
                         </div>
                       </div>
                     </div>
@@ -1586,18 +1644,54 @@ function RhythmReferenceContent() {
                 </ul>
               </div>
 
-              <div className="bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-xl p-4 mb-4 border border-emerald-500/30">
-                <div className="text-3xl font-bold text-emerald-400 mb-1">$9.99<span className="text-lg font-normal text-slate-400">/month</span></div>
-                <p className="text-sm text-slate-400">Cancel anytime · No commitment</p>
+              {/* Pricing Options */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <button
+                  onClick={() => setSelectedPlan('monthly')}
+                  className={`p-3 rounded-xl border-2 transition text-left ${
+                    selectedPlan === 'monthly'
+                      ? 'border-emerald-500 bg-emerald-500/10'
+                      : 'border-slate-600 hover:border-slate-500'
+                  }`}
+                >
+                  <div className="text-lg font-bold text-white">$9.99<span className="text-sm font-normal text-slate-400">/mo</span></div>
+                  <p className="text-xs text-slate-400">Billed monthly</p>
+                </button>
+                <button
+                  onClick={() => setSelectedPlan('annual')}
+                  className={`p-3 rounded-xl border-2 transition text-left relative ${
+                    selectedPlan === 'annual'
+                      ? 'border-amber-500 bg-amber-500/10'
+                      : 'border-slate-600 hover:border-slate-500'
+                  }`}
+                >
+                  <span className="absolute -top-2 right-2 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded">SAVE $20</span>
+                  <div className="text-lg font-bold text-white">$99<span className="text-sm font-normal text-slate-400">/yr</span></div>
+                  <p className="text-xs text-slate-400">Billed annually</p>
+                </button>
+              </div>
+
+              {/* Cancellation Policy */}
+              <div className="text-left bg-slate-900/50 rounded-lg p-3 mb-4 text-xs text-slate-500">
+                <p className="font-medium text-slate-400 mb-1">Cancellation Policy:</p>
+                <ul className="space-y-0.5">
+                  <li>• Cancel anytime from your account</li>
+                  <li>• Keep access until end of billing period</li>
+                  <li>• No refunds for partial periods</li>
+                </ul>
               </div>
 
               <div className="space-y-3">
                 <button
-                  onClick={handleDirectCheckout}
+                  onClick={() => handleDirectCheckout(selectedPlan)}
                   disabled={checkoutLoading}
-                  className="block w-full bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-3.5 rounded-lg font-semibold hover:from-emerald-600 hover:to-cyan-600 transition disabled:opacity-50 text-lg"
+                  className={`block w-full text-white py-3.5 rounded-lg font-semibold transition disabled:opacity-50 text-lg ${
+                    selectedPlan === 'annual'
+                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600'
+                      : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600'
+                  }`}
                 >
-                  {checkoutLoading ? 'Loading...' : 'Subscribe Now'}
+                  {checkoutLoading ? 'Loading...' : selectedPlan === 'annual' ? 'Subscribe — $99/year' : 'Subscribe — $9.99/month'}
                 </button>
                 <button
                   onClick={() => setShowUpgradeModal(false)}

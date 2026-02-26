@@ -8,6 +8,16 @@ export async function POST(req: NextRequest) {
   try {
     console.log("Subscribe API called")
 
+    // Get plan type from request body
+    let plan = "monthly"
+    try {
+      const body = await req.json()
+      plan = body.plan || "monthly"
+    } catch {
+      // Default to monthly if no body
+    }
+    console.log("Plan:", plan)
+
     // Step 1: Get session
     let session
     try {
@@ -63,6 +73,15 @@ export async function POST(req: NextRequest) {
     const origin = req.headers.get("origin") || "https://learning-platform-indol.vercel.app"
     console.log("Origin:", origin)
 
+    // Determine pricing based on plan
+    const isAnnual = plan === "annual"
+    const price = isAnnual ? STRIPE_CONFIG.ECG_VAULT_PRICE_ANNUAL : STRIPE_CONFIG.ECG_VAULT_PRICE_MONTHLY
+    const interval = isAnnual ? "year" : "month"
+    const planName = isAnnual ? "Live ECG Vault Pro - Annual" : "Live ECG Vault Pro - Monthly"
+    const planDesc = isAnnual
+      ? "All 49 ECG rhythms · Learn, Quiz & Analyze modes · Save $20"
+      : "All 49 ECG rhythms · Learn, Quiz & Analyze modes · Cancel anytime"
+
     // Step 4: Create Stripe checkout session
     console.log("Creating Stripe checkout session...")
     let checkoutSession
@@ -75,12 +94,12 @@ export async function POST(req: NextRequest) {
             price_data: {
               currency: STRIPE_CONFIG.CURRENCY,
               product_data: {
-                name: "Live ECG Vault - Pro",
-                description: "Full access to all 49 ECG rhythms, quizzes, and analysis tools",
+                name: planName,
+                description: planDesc,
               },
-              unit_amount: STRIPE_CONFIG.ECG_VAULT_PRICE,
+              unit_amount: price,
               recurring: {
-                interval: "month",
+                interval: interval,
                 interval_count: 1,
               },
             },
@@ -91,12 +110,14 @@ export async function POST(req: NextRequest) {
           metadata: {
             userId: user.id,
             productId: STRIPE_CONFIG.ECG_VAULT_PRODUCT_ID,
+            plan: plan,
           },
         },
         customer_email: user.email || session.user.email,
         metadata: {
           userId: user.id,
           productId: STRIPE_CONFIG.ECG_VAULT_PRODUCT_ID,
+          plan: plan,
         },
         success_url: `${origin}/rhythms?subscription=success`,
         cancel_url: `${origin}/vault?subscription=canceled`,

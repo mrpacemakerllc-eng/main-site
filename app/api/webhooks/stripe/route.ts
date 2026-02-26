@@ -88,40 +88,63 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
       return
     }
 
-    // Fetch subscription details from Stripe
-    console.log("Fetching subscription from Stripe:", session.subscription)
-    const stripeSubscription = await stripe.subscriptions.retrieve(
-      session.subscription as string
-    ) as unknown as { current_period_start: number; current_period_end: number }
-    console.log("Stripe subscription retrieved")
+    const subscriptionId = typeof session.subscription === 'string'
+      ? session.subscription
+      : session.subscription?.id
 
-    // Update subscription record
-    await prisma.subscription.upsert({
-      where: {
-        userId_productId: {
+    const customerId = typeof session.customer === 'string'
+      ? session.customer
+      : session.customer?.id
+
+    if (!subscriptionId) {
+      console.error("No subscription ID in checkout session")
+      return
+    }
+
+    console.log("Fetching subscription from Stripe:", subscriptionId)
+
+    try {
+      const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId, {
+        expand: ['items.data']
+      })
+      console.log("Stripe subscription retrieved:", stripeSubscription.id)
+
+      // Get period dates from the first subscription item
+      const firstItem = stripeSubscription.items.data[0]
+      const periodStart = firstItem ? new Date(firstItem.current_period_start * 1000) : new Date()
+      const periodEnd = firstItem ? new Date(firstItem.current_period_end * 1000) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+
+      // Update subscription record
+      await prisma.subscription.upsert({
+        where: {
+          userId_productId: {
+            userId,
+            productId: STRIPE_CONFIG.ECG_VAULT_PRODUCT_ID,
+          },
+        },
+        create: {
           userId,
           productId: STRIPE_CONFIG.ECG_VAULT_PRODUCT_ID,
+          stripeSubscriptionId: subscriptionId,
+          stripeCustomerId: customerId || null,
+          status: "active",
+          currentPeriodStart: periodStart,
+          currentPeriodEnd: periodEnd,
         },
-      },
-      create: {
-        userId,
-        productId: STRIPE_CONFIG.ECG_VAULT_PRODUCT_ID,
-        stripeSubscriptionId: session.subscription as string,
-        stripeCustomerId: session.customer as string,
-        status: "active",
-        currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
-      },
-      update: {
-        stripeSubscriptionId: session.subscription as string,
-        stripeCustomerId: session.customer as string,
-        status: "active",
-        currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
-      },
-    })
+        update: {
+          stripeSubscriptionId: subscriptionId,
+          stripeCustomerId: customerId || null,
+          status: "active",
+          currentPeriodStart: periodStart,
+          currentPeriodEnd: periodEnd,
+        },
+      })
 
-    console.log(`ECG Vault subscription activated for user ${userId}`)
+      console.log(`ECG Vault subscription activated for user ${userId}`)
+    } catch (err: any) {
+      console.error("Error processing ECG Vault subscription:", err.message)
+      throw err
+    }
     return
   }
 

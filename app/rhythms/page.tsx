@@ -1120,48 +1120,34 @@ function RhythmReferenceContent() {
             <button
               onClick={() => {
                 const idx = rhythms.findIndex(r => r.id === selectedRhythm.id);
-                // Find previous accessible rhythm (skip locked ones)
-                for (let i = idx - 1; i >= 0; i--) {
-                  const prevRhythm = rhythms[i];
+                // Find previous accessible rhythm with wrap-around
+                for (let i = 1; i <= rhythms.length; i++) {
+                  const prevIdx = (idx - i + rhythms.length) % rhythms.length;
+                  const prevRhythm = rhythms[prevIdx];
                   if (isPro || !prevRhythm.premium) {
                     handleRhythmChange(prevRhythm.id);
                     break;
                   }
                 }
               }}
-              disabled={(() => {
-                const idx = rhythms.findIndex(r => r.id === selectedRhythm.id);
-                // Disabled if no accessible rhythm before current
-                for (let i = idx - 1; i >= 0; i--) {
-                  if (isPro || !rhythms[i].premium) return false;
-                }
-                return true;
-              })()}
-              className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 text-sm sm:text-base"
+              className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm sm:text-base"
             >
               ← Prev
             </button>
             <button
               onClick={() => {
                 const idx = rhythms.findIndex(r => r.id === selectedRhythm.id);
-                // Find next accessible rhythm (skip locked ones)
-                for (let i = idx + 1; i < rhythms.length; i++) {
-                  const nextRhythm = rhythms[i];
+                // Find next accessible rhythm with wrap-around
+                for (let i = 1; i <= rhythms.length; i++) {
+                  const nextIdx = (idx + i) % rhythms.length;
+                  const nextRhythm = rhythms[nextIdx];
                   if (isPro || !nextRhythm.premium) {
                     handleRhythmChange(nextRhythm.id);
                     break;
                   }
                 }
               }}
-              disabled={(() => {
-                const idx = rhythms.findIndex(r => r.id === selectedRhythm.id);
-                // Disabled if no accessible rhythm after current
-                for (let i = idx + 1; i < rhythms.length; i++) {
-                  if (isPro || !rhythms[i].premium) return false;
-                }
-                return true;
-              })()}
-              className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 text-sm sm:text-base"
+              className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm sm:text-base"
             >
               Next →
             </button>

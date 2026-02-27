@@ -86,7 +86,7 @@ export default function RhythmStrip({
   // Center baseline between Lead II label (top ~35px) and Mr. Pacemaker watermark (bottom ~30px)
   // Offset down from center to account for R waves being taller than S waves
   // Snap exactly to a grid line so isoelectric line sits on the red horizontal
-  const rawBaselineY = height / 2 + pixelsPerMm * 5;
+  const rawBaselineY = height / 2 + pixelsPerMm * 4; // Moved up 1 small box
   const baselineY = Math.round(rawBaselineY / pixelsPerMm) * pixelsPerMm;
   const amplitudeScale = height * 0.32; // Slightly reduced to ensure no overlap
 

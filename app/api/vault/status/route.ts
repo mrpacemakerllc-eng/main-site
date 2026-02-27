@@ -33,29 +33,23 @@ export async function GET() {
       return NextResponse.json({ isPro: false, status: "user_not_found" })
     }
 
-    const subscription = await prisma.subscription.findUnique({
+    // Check for ECG Rhythm Library purchase (one-time, lifetime access)
+    const purchase = await prisma.subscription.findUnique({
       where: {
         userId_productId: {
           userId: user.id,
-          productId: STRIPE_CONFIG.ECG_VAULT_PRODUCT_ID,
+          productId: STRIPE_CONFIG.ECG_LIBRARY_PRODUCT_ID,
         },
       },
     })
 
-    if (!subscription) {
-      return NextResponse.json({ isPro: false, status: "no_subscription" })
+    if (!purchase) {
+      return NextResponse.json({ isPro: false, status: "no_purchase" })
     }
 
-    const isActive = subscription.status === "active"
-    const isExpired = subscription.currentPeriodEnd
-      ? new Date(subscription.currentPeriodEnd) < new Date()
-      : true
-
     return NextResponse.json({
-      isPro: isActive && !isExpired,
-      status: subscription.status,
-      currentPeriodEnd: subscription.currentPeriodEnd,
-      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
+      isPro: purchase.status === "active",
+      status: purchase.status,
     })
   } catch (error) {
     console.error("Vault status error:", error)

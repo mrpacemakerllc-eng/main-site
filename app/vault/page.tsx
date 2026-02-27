@@ -56,7 +56,7 @@ export default function VaultLanding() {
                   </svg>
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-white">Live ECG Vault</h1>
+                  <h1 className="text-xl font-bold text-white">Live ECG Rhythm Library</h1>
                   <p className="text-xs text-slate-400">by Mr Pacemaker LLC</p>
                 </div>
               </Link>
@@ -176,7 +176,7 @@ export default function VaultLanding() {
       {/* Features */}
       <section className="py-16 px-4 bg-slate-800/50">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-white text-center mb-12">Why Live ECG Vault?</h2>
+          <h2 className="text-3xl font-bold text-white text-center mb-12">Why Live ECG Rhythm Library?</h2>
 
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
@@ -355,8 +355,8 @@ export default function VaultLanding() {
               <h3 className="text-xl font-bold text-white mb-2">Pro</h3>
               <p className="text-slate-400 mb-6">Full access to all rhythms</p>
               <div className="mb-6">
-                <span className="text-4xl font-bold text-white">$9.99</span>
-                <span className="text-slate-400">/month</span>
+                <span className="text-4xl font-bold text-white">$19</span>
+                <span className="text-slate-400 ml-2">one-time</span>
               </div>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center text-slate-300">
@@ -389,7 +389,7 @@ export default function VaultLanding() {
                 disabled={loading}
                 className="block w-full text-center bg-gradient-to-r from-emerald-500 to-cyan-500 text-white py-3 rounded-lg font-medium hover:from-emerald-600 hover:to-cyan-600 transition disabled:opacity-50"
               >
-                {loading ? 'Loading...' : 'Subscribe Now - $9.99/mo'}
+                {loading ? 'Loading...' : 'Get Lifetime Access — $19'}
               </button>
             </div>
           </div>
@@ -403,7 +403,7 @@ export default function VaultLanding() {
             Ready to Master ECG Rhythms?
           </h2>
           <p className="text-xl text-slate-300 mb-8">
-            Join hundreds of healthcare professionals training with Live ECG Vault
+            Join hundreds of healthcare professionals training with Live ECG Rhythm Library
           </p>
           <Link
             href="/rhythms"
@@ -430,7 +430,7 @@ export default function VaultLanding() {
               <div>
                 <h3 className="text-amber-400 font-semibold mb-2">Educational Disclaimer</h3>
                 <p className="text-slate-400 text-sm leading-relaxed">
-                  Live ECG Vault is designed exclusively for educational and practice purposes. The content provided is intended to supplement formal training and should not be used as a substitute for professional medical education, clinical judgment, or patient care decisions. This platform does not provide medical advice, diagnosis, or treatment recommendations. Always consult qualified healthcare professionals and follow institutional protocols when interpreting ECGs in clinical settings.
+                  Live ECG Rhythm Library is designed exclusively for educational and practice purposes. The content provided is intended to supplement formal training and should not be used as a substitute for professional medical education, clinical judgment, or patient care decisions. This platform does not provide medical advice, diagnosis, or treatment recommendations. Always consult qualified healthcare professionals and follow institutional protocols when interpreting ECGs in clinical settings.
                 </p>
               </div>
             </div>
@@ -447,7 +447,7 @@ export default function VaultLanding() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <span className="text-slate-400 text-sm">Live ECG Vault by Mr Pacemaker LLC</span>
+            <span className="text-slate-400 text-sm">Live ECG Rhythm Library by Mr Pacemaker LLC</span>
           </div>
           <p className="text-slate-500 text-sm">© 2026 Mr Pacemaker LLC. All rights reserved.</p>
         </div>

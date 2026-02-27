@@ -11,8 +11,7 @@ export const STRIPE_CONFIG = {
   PAYMENT_PLAN_PRICE: 6700, // $67.00 per month in cents
   PAYMENT_PLAN_INSTALLMENTS: 3,
   CURRENCY: "usd",
-  // ECG Vault subscription
-  ECG_VAULT_PRICE_MONTHLY: 999, // $9.99 per month in cents
-  ECG_VAULT_PRICE_ANNUAL: 9900, // $99.00 per year in cents (save ~$20)
-  ECG_VAULT_PRODUCT_ID: "ecg_vault",
+  // ECG Rhythm Library - one-time purchase
+  ECG_LIBRARY_PRICE: 1900, // $19.00 one-time
+  ECG_LIBRARY_PRODUCT_ID: "ecg_rhythm_library",
 }

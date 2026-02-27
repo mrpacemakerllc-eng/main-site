@@ -478,17 +478,16 @@ function RhythmReferenceContent() {
   const [caliperMode, setCaliperMode] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'annual'>('monthly');
 
-  // Subscription state - fetched from API
+  // Purchase state - fetched from API
   const [isPro, setIsPro] = useState(false);
-  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [purchaseLoading, setPurchaseLoading] = useState(true);
 
   // Direct checkout handler - goes straight to Stripe
-  const handleDirectCheckout = async (plan: 'monthly' | 'annual' = selectedPlan) => {
+  const handleDirectCheckout = async () => {
     if (!session) {
       // Not logged in - redirect to register with checkout flow
-      window.location.href = `/vault/register?checkout=true&plan=${plan}`;
+      window.location.href = '/vault/register?checkout=true';
       return;
     }
 
@@ -496,9 +495,7 @@ function RhythmReferenceContent() {
     try {
       const res = await fetch('/api/vault/subscribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ plan }),
       });
       const data = await res.json();
       if (data.url) {
@@ -513,30 +510,11 @@ function RhythmReferenceContent() {
     }
   };
 
-  // Handle manage subscription - opens Stripe portal
-  const handleManageSubscription = async () => {
-    try {
-      const res = await fetch('/api/vault/portal', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert(data.error || 'Failed to open subscription portal');
-      }
-    } catch (error) {
-      alert('Failed to open subscription portal');
-    }
-  };
-
-  // Auto-open upgrade modal if returning from login
+  // Auto-open checkout if returning from login
   useEffect(() => {
     const upgrade = searchParams.get('upgrade');
-    const planParam = searchParams.get('plan') as 'monthly' | 'annual' | null;
     if (upgrade === 'true' && session) {
-      handleDirectCheckout(planParam || 'monthly');
+      handleDirectCheckout();
     }
   }, [session, searchParams]);
 
@@ -553,21 +531,21 @@ function RhythmReferenceContent() {
     }
   }, [searchParams]);
 
-  // Fetch subscription status on mount
+  // Fetch purchase status on mount
   useEffect(() => {
-    async function checkSubscription() {
+    async function checkPurchase() {
       try {
         const res = await fetch('/api/vault/status');
         const data = await res.json();
         setIsPro(data.isPro);
       } catch (error) {
-        console.error('Failed to check subscription:', error);
+        console.error('Failed to check purchase:', error);
         setIsPro(false);
       } finally {
-        setSubscriptionLoading(false);
+        setPurchaseLoading(false);
       }
     }
-    checkSubscription();
+    checkPurchase();
   }, []);
 
   // Check if a rhythm is accessible (free rhythms: NSR, Sinus Brady, Mobitz I)
@@ -925,7 +903,7 @@ function RhythmReferenceContent() {
           <div className="flex justify-between items-center h-12 sm:h-16">
             <div className="flex items-center">
               <Link href="/" className="flex items-center">
-                <h1 className="text-lg sm:text-2xl font-bold text-white">ECG Vault</h1>
+                <h1 className="text-lg sm:text-2xl font-bold text-white">ECG Rhythm Library</h1>
                 {isPro ? (
                   <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] sm:text-xs font-semibold rounded-full">PRO</span>
                 ) : (
@@ -934,21 +912,13 @@ function RhythmReferenceContent() {
               </Link>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              {!isPro && !subscriptionLoading && (
+              {!isPro && !purchaseLoading && (
                 <button
                   onClick={() => setShowUpgradeModal(true)}
                   disabled={checkoutLoading}
                   className="bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold hover:from-emerald-600 hover:to-cyan-600 transition"
                 >
                   {checkoutLoading ? '...' : 'Go Pro'}
-                </button>
-              )}
-              {isPro && (
-                <button
-                  onClick={handleManageSubscription}
-                  className="text-xs sm:text-sm text-amber-400 hover:text-amber-300 transition"
-                >
-                  Manage
                 </button>
               )}
               {session && (
@@ -965,7 +935,7 @@ function RhythmReferenceContent() {
       </nav>
 
       {/* Free user upgrade banner */}
-      {!isPro && !subscriptionLoading && (
+      {!isPro && !purchaseLoading && (
         <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-b border-amber-500/20 py-2 px-4">
           <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm">
@@ -1514,7 +1484,7 @@ function RhythmReferenceContent() {
                           >
                             {checkoutLoading ? 'Loading...' : 'Unlock Full Access'}
                           </button>
-                          <p className="text-slate-500 text-xs mt-2">From $9.99/mo · Cancel anytime</p>
+                          <p className="text-slate-500 text-xs mt-2">$19 one-time · Lifetime access</p>
                         </div>
                       </div>
                     </div>
@@ -1597,7 +1567,7 @@ function RhythmReferenceContent() {
                 </svg>
               </div>
               <p className="text-slate-400 text-xs leading-relaxed">
-                <span className="text-amber-400 font-semibold">Educational Use Only:</span> Live ECG Vault is for educational and practice purposes only. It does not provide medical advice or replace professional training. Always follow clinical protocols and consult qualified professionals for patient care.
+                <span className="text-amber-400 font-semibold">Educational Use Only:</span> Live ECG Rhythm Library is for educational and practice purposes only. It does not provide medical advice or replace professional training. Always follow clinical protocols and consult qualified professionals for patient care.
               </p>
             </div>
           </div>
@@ -1644,54 +1614,19 @@ function RhythmReferenceContent() {
                 </ul>
               </div>
 
-              {/* Pricing Options */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <button
-                  onClick={() => setSelectedPlan('monthly')}
-                  className={`p-3 rounded-xl border-2 transition text-left ${
-                    selectedPlan === 'monthly'
-                      ? 'border-emerald-500 bg-emerald-500/10'
-                      : 'border-slate-600 hover:border-slate-500'
-                  }`}
-                >
-                  <div className="text-lg font-bold text-white">$9.99<span className="text-sm font-normal text-slate-400">/mo</span></div>
-                  <p className="text-xs text-slate-400">Billed monthly</p>
-                </button>
-                <button
-                  onClick={() => setSelectedPlan('annual')}
-                  className={`p-3 rounded-xl border-2 transition text-left relative ${
-                    selectedPlan === 'annual'
-                      ? 'border-amber-500 bg-amber-500/10'
-                      : 'border-slate-600 hover:border-slate-500'
-                  }`}
-                >
-                  <span className="absolute -top-2 right-2 bg-amber-500 text-black text-[10px] font-bold px-1.5 py-0.5 rounded">SAVE $20</span>
-                  <div className="text-lg font-bold text-white">$99<span className="text-sm font-normal text-slate-400">/yr</span></div>
-                  <p className="text-xs text-slate-400">Billed annually</p>
-                </button>
-              </div>
-
-              {/* Cancellation Policy */}
-              <div className="text-left bg-slate-900/50 rounded-lg p-3 mb-4 text-xs text-slate-500">
-                <p className="font-medium text-slate-400 mb-1">Cancellation Policy:</p>
-                <ul className="space-y-0.5">
-                  <li>• Cancel anytime from your account</li>
-                  <li>• Keep access until end of billing period</li>
-                  <li>• No refunds for partial periods</li>
-                </ul>
+              {/* One-time Price */}
+              <div className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-xl p-4 mb-4 border border-emerald-500/30">
+                <div className="text-3xl font-bold text-white mb-1">$19</div>
+                <p className="text-sm text-slate-400">One-time payment · Lifetime access</p>
               </div>
 
               <div className="space-y-3">
                 <button
-                  onClick={() => handleDirectCheckout(selectedPlan)}
+                  onClick={() => handleDirectCheckout()}
                   disabled={checkoutLoading}
-                  className={`block w-full text-white py-3.5 rounded-lg font-semibold transition disabled:opacity-50 text-lg ${
-                    selectedPlan === 'annual'
-                      ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600'
-                      : 'bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600'
-                  }`}
+                  className="block w-full text-white py-3.5 rounded-lg font-semibold transition disabled:opacity-50 text-lg bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
                 >
-                  {checkoutLoading ? 'Loading...' : selectedPlan === 'annual' ? 'Subscribe — $99/year' : 'Subscribe — $9.99/month'}
+                  {checkoutLoading ? 'Loading...' : 'Get Lifetime Access — $19'}
                 </button>
                 <button
                   onClick={() => setShowUpgradeModal(false)}

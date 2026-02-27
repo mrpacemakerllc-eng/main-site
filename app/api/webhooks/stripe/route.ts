@@ -79,70 +79,43 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
   const { userId, courseId, paymentType, productId } = session.metadata || {}
   console.log("Extracted - userId:", userId, "productId:", productId)
 
-  // Handle ECG Vault subscription
-  if (productId === STRIPE_CONFIG.ECG_VAULT_PRODUCT_ID) {
-    console.log("ECG Vault subscription detected")
+  // Handle ECG Rhythm Library one-time purchase
+  if (productId === STRIPE_CONFIG.ECG_LIBRARY_PRODUCT_ID) {
+    console.log("ECG Rhythm Library purchase detected")
 
     if (!userId) {
-      console.error("Missing userId for vault subscription")
+      console.error("Missing userId for library purchase")
       return
     }
-
-    const subscriptionId = typeof session.subscription === 'string'
-      ? session.subscription
-      : session.subscription?.id
 
     const customerId = typeof session.customer === 'string'
       ? session.customer
       : session.customer?.id
 
-    if (!subscriptionId) {
-      console.error("No subscription ID in checkout session")
-      return
-    }
-
-    console.log("Fetching subscription from Stripe:", subscriptionId)
-
     try {
-      const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId, {
-        expand: ['items.data']
-      })
-      console.log("Stripe subscription retrieved:", stripeSubscription.id)
-
-      // Get period dates from the first subscription item
-      const firstItem = stripeSubscription.items.data[0]
-      const periodStart = firstItem ? new Date(firstItem.current_period_start * 1000) : new Date()
-      const periodEnd = firstItem ? new Date(firstItem.current_period_end * 1000) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-
-      // Update subscription record
+      // Grant lifetime access
       await prisma.subscription.upsert({
         where: {
           userId_productId: {
             userId,
-            productId: STRIPE_CONFIG.ECG_VAULT_PRODUCT_ID,
+            productId: STRIPE_CONFIG.ECG_LIBRARY_PRODUCT_ID,
           },
         },
         create: {
           userId,
-          productId: STRIPE_CONFIG.ECG_VAULT_PRODUCT_ID,
-          stripeSubscriptionId: subscriptionId,
+          productId: STRIPE_CONFIG.ECG_LIBRARY_PRODUCT_ID,
           stripeCustomerId: customerId || null,
           status: "active",
-          currentPeriodStart: periodStart,
-          currentPeriodEnd: periodEnd,
         },
         update: {
-          stripeSubscriptionId: subscriptionId,
           stripeCustomerId: customerId || null,
           status: "active",
-          currentPeriodStart: periodStart,
-          currentPeriodEnd: periodEnd,
         },
       })
 
-      console.log(`ECG Vault subscription activated for user ${userId}`)
+      console.log(`ECG Rhythm Library access granted to user ${userId}`)
     } catch (err: any) {
-      console.error("Error processing ECG Vault subscription:", err.message)
+      console.error("Error processing ECG Rhythm Library purchase:", err.message)
       throw err
     }
     return

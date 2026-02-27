@@ -72,10 +72,10 @@ function RegisterForm() {
         <div className="text-center mb-8">
           {checkout ? (
             <>
-              <h2 className="text-2xl font-bold text-white mb-2">Get ECG Vault Pro</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">Get Full Access</h2>
               <p className="text-slate-400">Create account to unlock all 49 rhythms</p>
               <div className="mt-4 inline-block bg-amber-500/20 text-amber-400 px-4 py-2 rounded-lg text-sm font-semibold">
-                $9.99/month · Cancel anytime
+                $19 one-time · Lifetime access
               </div>
             </>
           ) : (
@@ -219,7 +219,7 @@ export default function VaultRegisterPage() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Live ECG Vault</h1>
+                <h1 className="text-xl font-bold text-white">ECG Rhythm Library</h1>
                 <p className="text-xs text-slate-400">by Mr Pacemaker LLC</p>
               </div>
             </Link>

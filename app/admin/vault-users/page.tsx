@@ -62,7 +62,7 @@ export default async function VaultUsersPage() {
             <Link href="/admin" className="text-slate-400 hover:text-white">
               ← Back to Admin
             </Link>
-            <h1 className="text-2xl font-bold text-white">ECG Vault Users</h1>
+            <h1 className="text-2xl font-bold text-white">ECG Library Users</h1>
           </div>
           <span className="text-slate-400">{user.email}</span>
         </div>

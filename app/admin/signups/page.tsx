@@ -74,7 +74,7 @@ export default function AdminSignupsPage() {
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-white border-b border-gray-200 px-6 py-4">
         <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">ECG Vault Signups</h1>
+          <h1 className="text-xl font-bold text-gray-900">ECG Library Signups</h1>
           <Link href="/" className="text-blue-600 hover:underline">Back to Site</Link>
         </div>
       </nav>

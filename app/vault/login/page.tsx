@@ -144,7 +144,7 @@ export default function VaultLoginPage() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Live ECG Vault</h1>
+                <h1 className="text-xl font-bold text-white">ECG Rhythm Library</h1>
                 <p className="text-xs text-slate-400">by Mr Pacemaker LLC</p>
               </div>
             </Link>

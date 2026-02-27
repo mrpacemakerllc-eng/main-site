@@ -78,7 +78,7 @@ export default async function AdminPage() {
               href="/admin/vault-users"
               className="text-emerald-600 hover:underline font-medium"
             >
-              ECG Vault Users
+              ECG Library Users
             </Link>
             <Link
               href="/admin/enrollments"

@@ -20,7 +20,7 @@ export default function Home() {
       <nav className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-white/5">
         <div className="max-w-3xl mx-auto px-5">
           <div className="flex justify-between items-center h-14">
-            <span className="text-base font-semibold tracking-tight">Live ECG Vault <span className="text-slate-500 font-normal">by Mr Pacemaker</span></span>
+            <span className="text-base font-semibold tracking-tight">ECG Rhythm Library <span className="text-slate-500 font-normal">by Mr Pacemaker</span></span>
             <div className="flex items-center gap-4">
               <Link
                 href="/about"
@@ -41,7 +41,7 @@ export default function Home() {
 
       {/* Hero — left-aligned, compact */}
       <section className="max-w-3xl mx-auto px-5 pt-6 pb-6">
-        <p className="text-emerald-400 text-sm font-medium mb-2">49 animated rhythms &middot; 3 Free &middot; Full access $9.99/mo</p>
+        <p className="text-emerald-400 text-sm font-medium mb-2">49 animated rhythms · 3 Free · Full access $19</p>
 
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-[1.15] mb-3">
           Learn ECG rhythms<br />
@@ -225,12 +225,12 @@ export default function Home() {
       {/* CTA */}
       <section className="max-w-3xl mx-auto px-5 py-10">
         <h2 className="text-2xl font-bold mb-3">Ready?</h2>
-        <p className="text-slate-400 text-sm mb-6">Try 3 rhythms free. Unlock all 49 for $9.99/month.</p>
+        <p className="text-slate-400 text-sm mb-6">Try 3 rhythms free. Unlock all 49 for $19.</p>
         <Link
           href="/rhythms"
           className="inline-block bg-white text-slate-900 text-base px-6 py-3 rounded-xl font-semibold hover:bg-slate-100 transition"
         >
-          Launch ECG Vault
+          Launch ECG Rhythm Library
         </Link>
       </section>
 
@@ -238,7 +238,7 @@ export default function Home() {
       <div className="border-t border-white/5" />
       <section className="max-w-3xl mx-auto px-5 py-6">
         <p className="text-slate-600 text-xs leading-relaxed">
-          <span className="text-amber-500/80 font-medium">Disclaimer:</span> Live ECG Vault is for educational purposes only. Not a substitute for professional medical education or clinical judgment. Always follow institutional protocols.
+          <span className="text-amber-500/80 font-medium">Disclaimer:</span> ECG Rhythm Library is for educational purposes only. Not a substitute for professional medical education or clinical judgment. Always follow institutional protocols.
         </p>
       </section>
 

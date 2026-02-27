@@ -10,7 +10,7 @@ export default function AboutPage() {
         <div className="max-w-3xl mx-auto px-5">
           <div className="flex justify-between items-center h-14">
             <Link href="/" className="text-base font-semibold tracking-tight">
-              Live ECG Vault <span className="text-slate-500 font-normal">by Mr Pacemaker</span>
+              ECG Rhythm Library <span className="text-slate-500 font-normal">by Mr Pacemaker</span>
             </Link>
             <Link
               href="/rhythms"
@@ -73,7 +73,7 @@ export default function AboutPage() {
             <h3 className="text-lg font-semibold text-white mb-1">Dr. Robin Singh, MD</h3>
             <p className="text-amber-400/70 text-sm mb-2">Electrophysiologist</p>
             <p className="text-slate-300 leading-relaxed">
-              Thank you for your review and feedback on early models of ECG Vault.
+              Thank you for your review and feedback on early models of ECG Rhythm Library.
             </p>
           </div>
         </div>

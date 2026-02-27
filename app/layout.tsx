@@ -8,7 +8,7 @@ import { Suspense } from "react"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Live ECG Vault",
+  title: "ECG Rhythm Library",
   description: "Interactive ECG rhythm training and reference",
 }
 

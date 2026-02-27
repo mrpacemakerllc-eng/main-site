@@ -661,7 +661,7 @@ function RhythmReferenceContent() {
         ['first-degree', 'mobitz1', 'mobitz2', 'block-2to1', 'chb'].includes(r.id)
       ),
       'Atrial Arrhythmias': rhythms.filter(r =>
-        ['wap', 'mat', 'atrial-tach', 'afib-slow', 'afib-rvr', 'aflutter-svr', 'aflutter-rvr'].includes(r.id)
+        ['wap', 'mat', 'atrial-tach', 'afib-slow', 'afib-nvr', 'afib-rvr', 'aflutter-svr', 'aflutter-rvr'].includes(r.id)
       ),
       'Junctional Rhythms': rhythms.filter(r =>
         ['junctional', 'accel-junctional', 'junctional-tach', 'svt', 'wpw'].includes(r.id)

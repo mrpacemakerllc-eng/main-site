@@ -121,6 +121,47 @@ async function handleCheckoutComplete(session: Stripe.Checkout.Session) {
     return
   }
 
+  // Handle Paced ECG Booklet one-time purchase
+  if (productId === STRIPE_CONFIG.PACED_ECG_BOOKLET_PRODUCT_ID) {
+    console.log("Paced ECG Booklet purchase detected")
+
+    if (!userId) {
+      console.error("Missing userId for booklet purchase")
+      return
+    }
+
+    const customerId = typeof session.customer === 'string'
+      ? session.customer
+      : session.customer?.id
+
+    try {
+      await prisma.subscription.upsert({
+        where: {
+          userId_productId: {
+            userId,
+            productId: STRIPE_CONFIG.PACED_ECG_BOOKLET_PRODUCT_ID,
+          },
+        },
+        create: {
+          userId,
+          productId: STRIPE_CONFIG.PACED_ECG_BOOKLET_PRODUCT_ID,
+          stripeCustomerId: customerId || null,
+          status: "active",
+        },
+        update: {
+          stripeCustomerId: customerId || null,
+          status: "active",
+        },
+      })
+
+      console.log(`Paced ECG Booklet access granted to user ${userId}`)
+    } catch (err: any) {
+      console.error("Error processing Paced ECG Booklet purchase:", err.message)
+      throw err
+    }
+    return
+  }
+
   // Handle course payments (existing logic)
   if (!userId || !courseId || !paymentType) {
     console.error("Missing metadata in checkout session")

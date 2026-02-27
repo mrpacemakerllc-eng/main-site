@@ -193,11 +193,8 @@ function RegisterForm() {
               <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span>Cancel anytime</span>
+              <span>Lifetime access</span>
             </div>
-            <p className="text-xs text-slate-500 mt-3 pt-3 border-t border-slate-700">
-              Cancel anytime from your account. Access continues until end of billing period. No refunds for partial months.
-            </p>
           </div>
         )}
       </div>

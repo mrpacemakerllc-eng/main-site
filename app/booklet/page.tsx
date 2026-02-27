@@ -132,13 +132,12 @@ function BookletContent() {
             <div className="grid md:grid-cols-2 gap-6">
               {/* Cover Preview */}
               <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700">
-                <div className="aspect-[8.5/11] bg-gradient-to-br from-slate-700 to-slate-800 rounded-lg flex items-center justify-center overflow-hidden">
-                  <div className="text-center p-6">
-                    <div className="text-amber-400 text-sm font-medium mb-4">COVER</div>
-                    <div className="text-2xl font-bold mb-2">How to Read a Paced ECG</div>
-                    <div className="text-slate-400 text-sm">A Visual Guide</div>
-                    <div className="mt-6 text-slate-500 text-xs">by Mr Pacemaker</div>
-                  </div>
+                <div className="aspect-[8.5/11] bg-slate-700 rounded-lg overflow-hidden flex items-center justify-center">
+                  <img
+                    src="/paced-ecg-booklet-cover.png"
+                    alt="How to Read a Paced ECG - Cover"
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <p className="text-center text-slate-500 text-xs mt-2">Cover Page</p>
               </div>

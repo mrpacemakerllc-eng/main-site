@@ -1,118 +1,84 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { redirect } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
-interface Signup {
-  email: string;
-  timestamp: string;
-}
+export default async function AdminQuizLeadsPage() {
+  const session = await getServerSession(authOptions);
 
-export default function AdminSignupsPage() {
-  const [signups, setSignups] = useState<Signup[]>([]);
-  const [password, setPassword] = useState('');
-  const [authenticated, setAuthenticated] = useState(false);
-
-  useEffect(() => {
-    if (authenticated) {
-      const stored = localStorage.getItem('ecg-vault-signups');
-      if (stored) {
-        setSignups(JSON.parse(stored));
-      }
-    }
-  }, [authenticated]);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simple password protection - change this password!
-    if (password === 'mrpacemaker2025') {
-      setAuthenticated(true);
-    } else {
-      alert('Incorrect password');
-    }
-  };
-
-  const exportCSV = () => {
-    const csv = 'Email,Signup Date\n' + signups.map(s =>
-      `${s.email},${new Date(s.timestamp).toLocaleString()}`
-    ).join('\n');
-
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ecg-vault-signups-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-  };
-
-  if (!authenticated) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Admin Access</h1>
-          <form onSubmit={handleLogin}>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter admin password"
-              className="w-full px-4 py-3 border rounded-lg mb-4"
-            />
-            <button
-              type="submit"
-              className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700"
-            >
-              Login
-            </button>
-          </form>
-        </div>
-      </div>
-    );
+  if (!session) {
+    redirect('/login');
   }
 
+  const user = session.user as any;
+  if (user.role !== 'admin') {
+    redirect('/dashboard');
+  }
+
+  const leads = await prisma.quizLead.findMany({
+    orderBy: { createdAt: 'desc' },
+  });
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex justify-between items-center">
-          <h1 className="text-xl font-bold text-gray-900">ECG Library Signups</h1>
-          <Link href="/" className="text-blue-600 hover:underline">Back to Site</Link>
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="text-2xl font-bold">Quiz Leads</h1>
+          <div className="flex gap-4 items-center">
+            <Link href="/admin" className="text-blue-600 hover:underline">
+              ← Back to Admin
+            </Link>
+          </div>
         </div>
       </nav>
 
-      <main className="max-w-4xl mx-auto p-6">
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Email Signups</h2>
-              <p className="text-gray-600">{signups.length} total signups</p>
+              <h2 className="text-xl font-bold">Email Leads from Quiz</h2>
+              <p className="text-gray-500 text-sm">{leads.length} total leads</p>
             </div>
-            <button
-              onClick={exportCSV}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700"
-            >
-              Export CSV
-            </button>
           </div>
 
-          {signups.length === 0 ? (
-            <p className="text-gray-500 text-center py-8">No signups yet</p>
+          {leads.length === 0 ? (
+            <p className="text-gray-500 text-center py-8">No quiz leads yet.</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">#</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700">Date</th>
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Email
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Score
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Source
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                      Date
+                    </th>
                   </tr>
                 </thead>
-                <tbody>
-                  {signups.map((signup, index) => (
-                    <tr key={index} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-gray-600">{index + 1}</td>
-                      <td className="py-3 px-4 text-gray-900">{signup.email}</td>
-                      <td className="py-3 px-4 text-gray-600">
-                        {new Date(signup.timestamp).toLocaleString()}
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {leads.map((lead) => (
+                    <tr key={lead.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {lead.email}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {lead.score !== null && lead.total !== null
+                          ? `${lead.score}/${lead.total}`
+                          : '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {lead.source || '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(lead.createdAt).toLocaleDateString()}
                       </td>
                     </tr>
                   ))}
@@ -121,14 +87,7 @@ export default function AdminSignupsPage() {
             </div>
           )}
         </div>
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-yellow-800 text-sm">
-            <strong>Note:</strong> Signups are stored in browser localStorage. To persist signups across devices,
-            integrate with a database (Supabase, Firebase, etc.) or email service (Mailchimp, ConvertKit).
-          </p>
-        </div>
-      </main>
+      </div>
     </div>
   );
 }

@@ -75,10 +75,10 @@ export default async function AdminPage() {
           </div>
           <div className="flex gap-4 items-center">
             <Link
-              href="/admin/vault-users"
+              href="/admin/signups"
               className="text-emerald-600 hover:underline font-medium"
             >
-              ECG Library Users
+              Quiz Leads
             </Link>
             <Link
               href="/admin/enrollments"

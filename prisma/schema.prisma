@@ -192,3 +192,14 @@ model Payment {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
 }
+
+// Quiz email leads
+model QuizLead {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  score     Int?
+  total     Int?
+  source    String?  // Which quiz they took
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

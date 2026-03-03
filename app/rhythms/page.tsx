@@ -477,46 +477,10 @@ function RhythmReferenceContent() {
   const [isRunning, setIsRunning] = useState(true);
   const [caliperMode, setCaliperMode] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-
-  // Purchase state - fetched from API
-  const [isPro, setIsPro] = useState(false);
-  const [purchaseLoading, setPurchaseLoading] = useState(true);
-
-  // Direct checkout handler - goes straight to Stripe
-  const handleDirectCheckout = async () => {
-    if (!session) {
-      // Not logged in - redirect to register with checkout flow
-      window.location.href = '/vault/register?checkout=true';
-      return;
-    }
-
-    setCheckoutLoading(true);
-    try {
-      const res = await fetch('/api/vault/subscribe', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        alert(data.error || 'Failed to create checkout');
-      }
-    } catch (error) {
-      alert('Failed to start checkout');
-    } finally {
-      setCheckoutLoading(false);
-    }
-  };
-
-  // Auto-open checkout if returning from login
-  useEffect(() => {
-    const upgrade = searchParams.get('upgrade');
-    if (upgrade === 'true' && session) {
-      handleDirectCheckout();
-    }
-  }, [session, searchParams]);
+  // All rhythms are now free - no purchase required
+  const isPro = true;
+  const purchaseLoading = false;
+  const checkoutLoading = false; // No checkout needed
 
   // Handle rhythm query parameter
   useEffect(() => {
@@ -530,23 +494,6 @@ function RhythmReferenceContent() {
       }
     }
   }, [searchParams]);
-
-  // Fetch purchase status on mount
-  useEffect(() => {
-    async function checkPurchase() {
-      try {
-        const res = await fetch('/api/vault/status');
-        const data = await res.json();
-        setIsPro(data.isPro);
-      } catch (error) {
-        console.error('Failed to check purchase:', error);
-        setIsPro(false);
-      } finally {
-        setPurchaseLoading(false);
-      }
-    }
-    checkPurchase();
-  }, []);
 
   // Check if a rhythm is accessible (free rhythms: NSR, Sinus Brady, Mobitz I)
   const isRhythmLocked = (rhythm: Rhythm) => !isPro && rhythm.premium;

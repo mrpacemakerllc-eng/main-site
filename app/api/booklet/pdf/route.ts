@@ -2,37 +2,65 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { STRIPE_CONFIG } from "@/lib/stripe"
+import { stripe, STRIPE_CONFIG } from "@/lib/stripe"
 import { readFile } from "fs/promises"
 import path from "path"
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const url = new URL(req.url)
+    const sessionId = url.searchParams.get("session_id")
+
+    let hasAccess = false
+    let userEmail = ""
+
+    // Method 1: Check Stripe session (for guest purchases)
+    if (sessionId) {
+      // TEST MODE - allow test_session for testing
+      if (sessionId === "test_session") {
+        hasAccess = true
+        userEmail = "Test User"
+      } else {
+        try {
+          const checkoutSession = await stripe.checkout.sessions.retrieve(sessionId)
+          if (checkoutSession.payment_status === "paid") {
+            hasAccess = true
+            userEmail = checkoutSession.customer_email || "Purchased"
+          }
+        } catch (e) {
+          console.error("Stripe session check failed:", e)
+        }
+      }
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    })
+    // Method 2: Check logged-in user's purchase (for returning users)
+    if (!hasAccess) {
+      const session = await getServerSession(authOptions)
+      if (session?.user?.email) {
+        userEmail = session.user.email
+        const user = await prisma.user.findUnique({
+          where: { email: session.user.email },
+        })
 
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 })
+        if (user) {
+          const purchase = await prisma.subscription.findUnique({
+            where: {
+              userId_productId: {
+                userId: user.id,
+                productId: STRIPE_CONFIG.PACED_ECG_BOOKLET_PRODUCT_ID,
+              },
+            },
+          })
+
+          if (purchase?.status === "active") {
+            hasAccess = true
+          }
+        }
+      }
     }
 
-    // Check if user has purchased the booklet
-    const purchase = await prisma.subscription.findUnique({
-      where: {
-        userId_productId: {
-          userId: user.id,
-          productId: STRIPE_CONFIG.PACED_ECG_BOOKLET_PRODUCT_ID,
-        },
-      },
-    })
-
-    if (purchase?.status !== "active") {
-      return NextResponse.json({ error: "Not purchased" }, { status: 403 })
+    if (!hasAccess) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 })
     }
 
     // Read the PDF file

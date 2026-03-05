@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mr Pacemaker - IBHRE CCDS Quiz</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-LW43WLFBKG"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-LW43WLFBKG');
+    </script>
+    <!-- End Google Analytics -->
+    <style>
+        .quiz-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .quiz-header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .quiz-header p {
+            color: var(--text-light);
+            font-size: 1.1rem;
+        }
+
+        .quiz-progress {
+            background: var(--off-white);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-bar {
+            flex: 1;
+            height: 10px;
+            background: var(--border-color);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 0 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--secondary-color);
+            transition: width 0.3s ease;
+        }
+
+        .question-card {
+            background: var(--white);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .question-card.answered-correct {
+            border-color: var(--success-color);
+            background: #f0fff4;
+        }
+
+        .question-card.answered-incorrect {
+            border-color: var(--accent-color);
+            background: #fff5f5;
+        }
+
+        .question-number {
+            color: var(--secondary-color);
+            font-weight: 700;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .answers-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .answer-option {
+            background: var(--off-white);
+            border: 2px solid var(--border-color);
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .answer-option:hover:not(.selected):not(.disabled) {
+            border-color: var(--secondary-color);
+            transform: translateX(5px);
+        }
+
+        .answer-option.selected {
+            border-color: var(--secondary-color);
+            background: #e3f2fd;
+        }
+
+        .answer-option.correct {
+            border-color: var(--success-color);
+            background: #f0fff4;
+        }
+
+        .answer-option.incorrect {
+            border-color: var(--accent-color);
+            background: #fff5f5;
+        }
+
+        .answer-option.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .answer-label {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-right: 0.75rem;
+        }
+
+        .answer-text {
+            color: var(--text-dark);
+        }
+
+        .result-indicator {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+        }
+
+        .explanation {
+            background: var(--off-white);
+            border-left: 4px solid var(--secondary-color);
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .explanation.show {
+            display: block;
+        }
+
+        .explanation-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .explanation-text {
+            color: var(--text-dark);
+            line-height: 1.7;
+        }
+
+        .quiz-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+
+        .quiz-results {
+            background: #ffffff;
+            color: #1e293b;
+            padding: 2.5rem;
+            border-radius: 16px;
+            text-align: center;
+            display: none;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            border: 2px solid #e2e8f0;
+        }
+
+        .quiz-results.show {
+            display: block;
+        }
+
+        .results-score {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+            color: #0d9488;
+        }
+
+        .results-message {
+            font-size: 1.1rem;
+            margin-bottom: 1.5rem;
+            color: #475569;
+        }
+
+        .results-breakdown {
+            background: #f1f5f9;
+            padding: 1.25rem;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+        }
+
+        .results-breakdown div {
+            margin: 0.4rem 0;
+            font-size: 1rem;
+            color: #334155;
+        }
+
+        .certification-banner {
+            background: linear-gradient(135deg, #0d9488 0%, #0891b2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .certification-banner h2 {
+            color: white;
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+
+        .certification-banner p {
+            color: rgba(255,255,255,0.9);
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <div class="logo">
+                    <img src="logo.jpg" alt="Mr Pacemaker LLC" class="logo-img">
+                </div>
+                <ul class="nav-menu">
+                    <li><a href="/">Home</a></li>
+                    <li><a href="#" onclick="openResourceModal('cardiac-quiz'); return false;">Cardiac Device Quiz</a></li>
+                    <li><a href="ccds-quiz.html">IBHRE CCDS Quiz</a></li>
+                    <li><a href="/#about">About</a></li>
+                    <li><a href="/#contact">Contact</a></li>
+                </ul>
+                <div class="hamburger">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="quiz-container">
+        <div class="quiz-header">
+            <h1>IBHRE CCDS Quiz</h1>
+            <p>Test your knowledge with practice questions designed for cardiac device specialists</p>
+        </div>
+
+        <div class="certification-banner">
+            <h2>IBHRE CCDS Exam Preparation</h2>
+            <p>Master key concepts tested on the Certified Cardiac Device Specialist certification</p>
+        </div>
+
+        <div class="quiz-progress">
+            <span class="progress-text">Question <span id="currentQ">1</span> of <span id="totalQ">5</span></span>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 10%"></div>
+            </div>
+            <span class="score-text">Score: <span id="score">0</span>/<span id="totalScore">0</span></span>
+        </div>
+
+        <div id="quizQuestions"></div>
+
+        <div class="quiz-actions">
+            <button class="btn btn-secondary" id="resetBtn" style="display: none;">Restart Quiz</button>
+            <button class="btn btn-primary" id="submitBtn" style="display: none;">Submit Quiz</button>
+        </div>
+
+        <div class="quiz-results" id="quizResults">
+            <h2>Quiz Complete!</h2>
+            <div class="results-score" id="finalScore"></div>
+            <div class="results-message" id="resultsMessage"></div>
+            <div class="results-breakdown">
+                <div>Correct Answers: <strong id="correctCount">0</strong></div>
+                <div>Incorrect Answers: <strong id="incorrectCount">0</strong></div>
+                <div>Percentage: <strong id="percentage">0%</strong></div>
+            </div>
+            <div style="margin: 1.5rem 0; padding: 1.5rem; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <p style="color: #475569; margin-bottom: 1rem; font-size: 1rem;">Want to go deeper? Get the complete visual guide.</p>
+                <a href="https://www.amazon.com/Basics-Cardiac-Devices-Visual-Pacemakers/dp/B0FDHV3DNF" target="_blank" style="display: inline-block; background: #f59e0b; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600;">Get Basics of Cardiac Devices on Amazon</a>
+            </div>
+            <button onclick="location.reload()" style="margin-top: 0.5rem; background: #0d9488; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 600;">Retake Quiz</button>
+
+        </div>
+    </div>
+
+    <footer class="footer-simple">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2025 Mr Pacemaker LLC. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Sticky Book Button (Mobile) -->
+    <div class="sticky-book-btn">
+        <a href="https://www.amazon.com/Basics-Cardiac-Devices-Visual-Pacemakers/dp/B0FDHV3DNF" target="_blank" class="btn btn-primary">📚 Buy Book on Amazon</a>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="ccds-quiz-script.js"></script>
+</body>
+</html>

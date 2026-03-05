@@ -3,6 +3,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { Providers } from "./providers"
 import GoogleAnalytics from "./components/GoogleAnalytics"
+import Analytics from "./components/Analytics"
 import { Suspense } from "react"
 
 const inter = Inter({ subsets: ["latin"] })
@@ -22,6 +23,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Suspense fallback={null}>
           <GoogleAnalytics />
+          <Analytics />
         </Suspense>
         <Providers>{children}</Providers>
       </body>

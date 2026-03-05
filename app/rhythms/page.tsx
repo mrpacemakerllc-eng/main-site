@@ -477,10 +477,31 @@ function RhythmReferenceContent() {
   const [isRunning, setIsRunning] = useState(true);
   const [caliperMode, setCaliperMode] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  // All rhythms are now free - no purchase required
-  const isPro = true;
+  // Premium rhythms require purchase
+  const isPro = false;
   const purchaseLoading = false;
-  const checkoutLoading = false; // No checkout needed
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  // Handle direct checkout for ECG Library
+  const handleDirectCheckout = async () => {
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch('/api/ecg-library/purchase', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Failed to create checkout');
+      }
+    } catch (error) {
+      alert('Failed to start checkout');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   // Handle rhythm query parameter
   useEffect(() => {

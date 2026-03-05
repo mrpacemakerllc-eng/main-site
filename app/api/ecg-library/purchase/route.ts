@@ -16,10 +16,10 @@ export async function POST(req: NextRequest) {
           price_data: {
             currency: STRIPE_CONFIG.CURRENCY,
             product_data: {
-              name: "How to Read a Paced ECG",
-              description: "30-page digital booklet - Instant PDF download",
+              name: "ECG Rhythm Library",
+              description: "49 animated ECG rhythms - Lifetime access",
             },
-            unit_amount: STRIPE_CONFIG.PACED_ECG_BOOKLET_PRICE,
+            unit_amount: STRIPE_CONFIG.ECG_LIBRARY_PRICE,
           },
           quantity: 1,
         },
@@ -27,11 +27,11 @@ export async function POST(req: NextRequest) {
       // If logged in, prefill email; otherwise Stripe will collect it
       ...(session?.user?.email && { customer_email: session.user.email }),
       metadata: {
-        productId: STRIPE_CONFIG.PACED_ECG_BOOKLET_PRODUCT_ID,
+        productId: STRIPE_CONFIG.ECG_LIBRARY_PRODUCT_ID,
         ...(session?.user?.email && { userEmail: session.user.email }),
       },
-      success_url: `${origin}/booklet?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/booklet?purchase=canceled`,
+      success_url: `${origin}/rhythms?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/rhythms?purchase=canceled`,
     })
 
     return NextResponse.json({
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       url: checkoutSession.url,
     })
   } catch (error: any) {
-    console.error("Booklet purchase error:", error)
+    console.error("ECG Library purchase error:", error)
     return NextResponse.json(
       { error: "Unexpected error: " + (error?.message || "Unknown") },
       { status: 500 }

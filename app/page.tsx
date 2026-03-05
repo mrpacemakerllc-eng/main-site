@@ -158,10 +158,50 @@ function ECGCanvas() {
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
+  const [formName, setFormName] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const resourceUrls: Record<string, string> = {
+    'cardiac-quiz': '/quiz.html',
+    'ccds-quiz': '/ccds-quiz.html',
+    'ibhre-guide': '/IBHRE-CCDS-Guide.pdf',
+  };
 
   const openResourceModal = (type: string) => {
     setModalType(type);
     setShowModal(true);
+  };
+
+  const handleResourceSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+
+    try {
+      // Save to database
+      await fetch('/api/quiz-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formEmail,
+          source: modalType,
+        }),
+      });
+    } catch (error) {
+      // Continue anyway
+    }
+
+    // Get the resource URL
+    const url = resourceUrls[modalType] || '/rhythms';
+
+    // For PDFs, open in new tab; for quizzes, navigate
+    if (url.endsWith('.pdf')) {
+      window.open(url, '_blank');
+      setShowModal(false);
+      setSubmitting(false);
+    } else {
+      window.location.href = url;
+    }
   };
 
   return (
@@ -184,33 +224,17 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="bg-gradient-to-br from-teal-50 via-white to-cyan-50 py-10">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <span className="inline-block bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-sm font-semibold mb-4">
+      {/* Hero + Products Combined */}
+      <section id="products" className="bg-gradient-to-br from-teal-50 via-white to-cyan-50 py-8">
+        <div className="max-w-6xl mx-auto px-6 text-center mb-8">
+          <span className="inline-block bg-teal-100 text-teal-700 px-3 py-1 rounded-full text-xs font-semibold mb-3">
             Trusted by 500+ Healthcare Professionals
           </span>
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-4">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
             Master Cardiac Devices <span className="bg-gradient-to-r from-teal-600 to-cyan-600 bg-clip-text text-transparent">With Confidence</span>
           </h1>
-          <p className="text-lg text-gray-600 mb-6 max-w-2xl mx-auto">
-            Visual guides, interactive tools, and expert-designed resources for pacemakers and ECG interpretation.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            <a href="#products" className="bg-teal-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-teal-700 transition shadow-lg">
-              Explore Products
-            </a>
-            <a href="#resources" className="bg-white text-teal-700 border-2 border-teal-600 px-6 py-3 rounded-xl font-semibold hover:bg-teal-50 transition">
-              Free Resources
-            </a>
-          </div>
         </div>
-      </section>
-
-      {/* Products */}
-      <section id="products" className="py-12">
         <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-10">Educational Resources</h2>
 
           {/* 3 Product Cards - Symmetrical Grid */}
           <div className="grid md:grid-cols-3 gap-6">
@@ -282,9 +306,9 @@ export default function Home() {
 
             {/* ECG Rhythm Library */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex flex-col">
-              <div className="h-48 flex items-center justify-center mb-4">
+              <div className="h-48 flex items-center justify-center mb-4 overflow-hidden">
                 <Link href="/rhythms" className="w-full">
-                  <div className="bg-slate-900 rounded-lg p-2 relative">
+                  <div className="bg-slate-900 rounded-lg p-2 relative overflow-hidden">
                     <ECGCanvas />
                     <div className="absolute top-1 right-1 text-gray-400 text-xs bg-black/50 px-2 py-0.5 rounded">
                       25 mm/sec
@@ -499,35 +523,35 @@ export default function Home() {
       {/* Resource Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowModal(false)}>
-          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl" onClick={e => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <button onClick={() => setShowModal(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-2xl">
               ×
             </button>
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Access Free Resource</h3>
-            <p className="text-gray-600 mb-6">Enter your details to access this resource</p>
-            <form action="https://formsubmit.co/mr.pacemakerllc@gmail.com" method="POST" className="space-y-4">
-              <input type="hidden" name="_subject" value={`New Resource Signup: ${modalType}`} />
-              <input type="hidden" name="_captcha" value="false" />
-              <input type="hidden" name="resource" value={modalType} />
+            <p className="text-gray-600 mb-6">Enter your email for instant access</p>
+            <form onSubmit={handleResourceSubmit} className="space-y-4">
               <input
                 type="text"
-                name="name"
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
                 placeholder="Full name"
                 required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none"
               />
               <input
                 type="email"
-                name="email"
+                value={formEmail}
+                onChange={(e) => setFormEmail(e.target.value)}
                 placeholder="Email address"
                 required
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none"
               />
               <button
                 type="submit"
-                className="w-full bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition"
+                disabled={submitting}
+                className="w-full bg-teal-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-teal-700 transition disabled:opacity-50"
               >
-                Get Access
+                {submitting ? 'Loading...' : 'Get Instant Access'}
               </button>
             </form>
           </div>

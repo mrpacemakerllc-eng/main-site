@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import { trackEvent } from '../components/Analytics';
 
 // Dynamically import PDF viewer to avoid SSR issues
 const PdfViewer = dynamic(() => import('../components/PdfViewer'), {
@@ -21,11 +22,21 @@ const PdfViewer = dynamic(() => import('../components/PdfViewer'), {
 function BookletContent() {
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
-  const [hasPurchased, setHasPurchased] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Check URL first - if purchase=success, they paid
+  const purchaseSuccess = searchParams.get('purchase') === 'success';
+  const stripeSessionId = searchParams.get('session_id') || '';
+  const [hasPurchased, setHasPurchased] = useState(purchaseSuccess);
+  const [loading, setLoading] = useState(!purchaseSuccess);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
+    // If already confirmed via URL param, skip API check
+    if (purchaseSuccess) {
+      setHasPurchased(true);
+      setLoading(false);
+      return;
+    }
+
     async function checkPurchase() {
       try {
         const res = await fetch('/api/booklet/status');
@@ -38,18 +49,19 @@ function BookletContent() {
       }
     }
     checkPurchase();
-  }, []);
+  }, [purchaseSuccess]);
 
-  // Handle successful purchase redirect
-  useEffect(() => {
-    if (searchParams.get('purchase') === 'success') {
-      setHasPurchased(true);
-    }
-  }, [searchParams]);
+  // TEST MODE - set to true to skip Stripe checkout
+  const TEST_MODE = true;
 
   const handlePurchase = async () => {
-    if (!session) {
-      window.location.href = '/register?redirect=/booklet';
+    // Track checkout started
+    trackEvent('checkout_started', { product: 'paced_ecg_booklet', price: 19.99 });
+
+    // Skip Stripe in test mode
+    if (TEST_MODE) {
+      trackEvent('checkout_completed', { product: 'paced_ecg_booklet', test: true });
+      window.location.href = '/booklet?purchase=success&session_id=test_session';
       return;
     }
 
@@ -223,7 +235,16 @@ function BookletContent() {
             </span>
           </div>
 
-          <PdfViewer userEmail={session?.user?.email || ''} />
+          <PdfViewer
+            userEmail={session?.user?.email || 'Licensed User'}
+            sessionId={stripeSessionId}
+          />
+
+          <div className="text-center mt-8">
+            <Link href="/" className="text-teal-600 hover:text-teal-700 font-medium">
+              ← Back to Home
+            </Link>
+          </div>
         </div>
       )}
     </div>

@@ -15,6 +15,6 @@ export const STRIPE_CONFIG = {
   ECG_LIBRARY_PRICE: 1900, // $19.00 one-time
   ECG_LIBRARY_PRODUCT_ID: "ecg_rhythm_library",
   // Paced ECG Booklet - one-time purchase
-  PACED_ECG_BOOKLET_PRICE: 999, // $9.99 one-time
+  PACED_ECG_BOOKLET_PRICE: 1999, // $19.99 one-time
   PACED_ECG_BOOKLET_PRODUCT_ID: "paced_ecg_booklet",
 }

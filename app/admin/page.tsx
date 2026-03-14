@@ -75,6 +75,12 @@ export default async function AdminPage() {
           </div>
           <div className="flex gap-4 items-center">
             <Link
+              href="/admin/products"
+              className="text-purple-600 hover:underline font-medium"
+            >
+              Products & Analytics
+            </Link>
+            <Link
               href="/admin/signups"
               className="text-emerald-600 hover:underline font-medium"
             >

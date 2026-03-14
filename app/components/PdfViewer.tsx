@@ -12,9 +12,18 @@ export default function PdfViewer({ userEmail, sessionId }: PdfViewerProps) {
   const [error, setError] = useState<string | null>(null);
   const [isBlurred, setIsBlurred] = useState(false);
 
-  const pdfUrl = sessionId
-    ? `/api/booklet/pdf?session_id=${sessionId}`
-    : '/api/booklet/pdf';
+  // Build PDF URL with access parameters
+  const buildPdfUrl = () => {
+    const params = new URLSearchParams();
+    if (sessionId) params.set('session_id', sessionId);
+    if (userEmail && userEmail !== 'Licensed User' && userEmail !== 'Test User') {
+      params.set('email', userEmail);
+    }
+    const queryString = params.toString();
+    return queryString ? `/api/booklet/pdf?${queryString}` : '/api/booklet/pdf';
+  };
+
+  const pdfUrl = buildPdfUrl();
 
   // Screenshot prevention measures
   useEffect(() => {
@@ -58,22 +67,25 @@ export default function PdfViewer({ userEmail, sessionId }: PdfViewerProps) {
 
   return (
     <div className="pdf-viewer-container">
-      {/* PDF Display */}
+      {/* PDF Display - clean white page only */}
       <div
-        className="pdf-viewer bg-white rounded-xl overflow-hidden relative"
+        className="pdf-viewer relative"
         style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
         onContextMenu={(e) => e.preventDefault()}
       >
-        {/* Watermark overlay - top right */}
-        <div className="absolute top-3 right-3 pointer-events-none z-20">
-          <div className="bg-black/5 backdrop-blur-sm px-3 py-1.5 rounded text-black/40 text-sm font-medium">
-            @MrPacemaker · Licensed to: {userEmail}
+        {/* Watermark overlay - fixed position over iframe */}
+        <div
+          className="absolute top-4 right-4 pointer-events-none"
+          style={{ zIndex: 9999 }}
+        >
+          <div className="bg-white/90 shadow-sm border border-slate-200 px-3 py-1.5 rounded-lg text-slate-600 text-sm font-medium">
+            @MrPacemaker · {userEmail}
           </div>
         </div>
 
         {/* Blur overlay when screenshot detected */}
         {isBlurred && (
-          <div className="absolute inset-0 z-30 bg-white/90 backdrop-blur-xl flex items-center justify-center">
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-xl flex items-center justify-center" style={{ zIndex: 10000 }}>
             <div className="text-center">
               <div className="text-2xl font-bold text-slate-800 mb-2">Content Protected</div>
               <div className="text-slate-500">@MrPacemaker</div>
@@ -82,21 +94,21 @@ export default function PdfViewer({ userEmail, sessionId }: PdfViewerProps) {
         )}
 
         {loading && (
-          <div className="absolute inset-0 bg-slate-100 flex items-center justify-center z-10">
+          <div className="absolute inset-0 bg-white flex items-center justify-center" style={{ zIndex: 10 }}>
             <div className="text-slate-500">Loading PDF...</div>
           </div>
         )}
 
         {error && (
-          <div className="aspect-[8.5/11] bg-slate-100 flex items-center justify-center">
+          <div className="aspect-[8.5/11] bg-white flex items-center justify-center">
             <div className="text-red-500">{error}</div>
           </div>
         )}
 
         <iframe
-          src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-          className="w-full border-0"
-          style={{ height: '80vh', minHeight: '600px' }}
+          src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+          className="w-full border-0 bg-white"
+          style={{ height: '85vh', minHeight: '700px', background: 'white' }}
           onLoad={() => setLoading(false)}
           onError={() => {
             setLoading(false);
@@ -105,7 +117,7 @@ export default function PdfViewer({ userEmail, sessionId }: PdfViewerProps) {
         />
       </div>
 
-      <p className="text-center text-slate-600 text-xs mt-4">
+      <p className="text-center text-slate-500 text-xs mt-4">
         @MrPacemaker · Licensed to {userEmail} · Sharing prohibited
       </p>
 

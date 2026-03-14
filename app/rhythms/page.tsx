@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import RhythmStrip from '../components/RhythmStrip';
 import { Rhythm, rhythms, getQuizOptions, FREE_RHYTHM_IDS } from '../data/rhythms';
+import { trackEvent } from '../components/Analytics';
 
 type Mode = 'learn' | 'quiz' | 'analyze';
 
@@ -477,13 +478,59 @@ function RhythmReferenceContent() {
   const [isRunning, setIsRunning] = useState(true);
   const [caliperMode, setCaliperMode] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  // Premium rhythms require purchase
-  const isPro = false;
-  const purchaseLoading = false;
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+
+  // Email lookup for returning customers
+  const purchaseSuccess = searchParams.get('purchase') === 'success';
+  const stripeSessionId = searchParams.get('session_id') || '';
+  const [hasPurchased, setHasPurchased] = useState(purchaseSuccess);
+  const [purchaseLoading, setPurchaseLoading] = useState(!purchaseSuccess);
+  const [lookupEmail, setLookupEmail] = useState('');
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState('');
+  const [verifiedEmail, setVerifiedEmail] = useState('');
+
+  // isPro is true if user has purchased
+  const isPro = hasPurchased;
+
+  // Check if user has already purchased on page load
+  useEffect(() => {
+    if (purchaseSuccess) {
+      setHasPurchased(true);
+      setPurchaseLoading(false);
+      trackEvent('checkout_completed', { product: 'ecg_rhythm_library' });
+      return;
+    }
+
+    // Check if logged-in user has purchased
+    async function checkPurchase() {
+      if (session?.user?.email) {
+        try {
+          const res = await fetch('/api/verify-purchase', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: session.user.email,
+              productId: 'ecg_rhythm_library',
+            }),
+          });
+          const data = await res.json();
+          if (data.verified) {
+            setHasPurchased(true);
+            setVerifiedEmail(session.user.email);
+          }
+        } catch (error) {
+          console.error('Failed to check purchase:', error);
+        }
+      }
+      setPurchaseLoading(false);
+    }
+    checkPurchase();
+  }, [purchaseSuccess, session?.user?.email]);
 
   // Handle direct checkout for ECG Library
   const handleDirectCheckout = async () => {
+    trackEvent('checkout_started', { product: 'ecg_rhythm_library', price: 19 });
     setCheckoutLoading(true);
     try {
       const res = await fetch('/api/ecg-library/purchase', {
@@ -500,6 +547,41 @@ function RhythmReferenceContent() {
       alert('Failed to start checkout');
     } finally {
       setCheckoutLoading(false);
+    }
+  };
+
+  // Verify purchase by email (for returning customers)
+  const handleEmailLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!lookupEmail) return;
+
+    setLookupLoading(true);
+    setLookupError('');
+
+    try {
+      const res = await fetch('/api/verify-purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: lookupEmail,
+          productId: 'ecg_rhythm_library',
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.verified) {
+        setVerifiedEmail(lookupEmail);
+        setHasPurchased(true);
+        setShowUpgradeModal(false);
+        trackEvent('returning_customer', { product: 'ecg_rhythm_library', email: lookupEmail });
+      } else {
+        setLookupError('No purchase found for this email. Please use the email you checked out with.');
+      }
+    } catch (error) {
+      setLookupError('Something went wrong. Please try again.');
+    } finally {
+      setLookupLoading(false);
     }
   };
 
@@ -901,6 +983,17 @@ function RhythmReferenceContent() {
           </div>
         </div>
       </nav>
+
+      {/* Pro user welcome banner */}
+      {isPro && (
+        <div className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 border-b border-emerald-500/20 py-2 px-4">
+          <div className="max-w-6xl mx-auto flex items-center justify-center gap-2 text-sm">
+            <span className="text-emerald-400 font-medium">All 49 Rhythms Unlocked</span>
+            <span className="text-slate-400">•</span>
+            <span className="text-slate-300">Welcome back{verifiedEmail ? `, ${verifiedEmail}` : ''}!</span>
+          </div>
+        </div>
+      )}
 
       {/* Free user upgrade banner */}
       {!isPro && !purchaseLoading && (
@@ -1588,6 +1681,33 @@ function RhythmReferenceContent() {
                 >
                   Continue with Free
                 </button>
+              </div>
+
+              {/* Already Purchased - Email Lookup */}
+              <div className="mt-6 pt-5 border-t border-slate-700">
+                <p className="text-slate-400 text-sm mb-3">
+                  Already purchased? Enter the email you used at checkout:
+                </p>
+                <form onSubmit={handleEmailLookup} className="space-y-2">
+                  <input
+                    type="email"
+                    value={lookupEmail}
+                    onChange={(e) => setLookupEmail(e.target.value)}
+                    placeholder="your@email.com"
+                    className="w-full px-4 py-2.5 rounded-lg border border-slate-600 bg-slate-700/50 text-white placeholder-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none text-center"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={lookupLoading}
+                    className="w-full bg-slate-700 text-white py-2.5 rounded-lg font-medium hover:bg-slate-600 transition disabled:opacity-50"
+                  >
+                    {lookupLoading ? 'Checking...' : 'Access My Library'}
+                  </button>
+                </form>
+                {lookupError && (
+                  <p className="text-red-400 text-sm text-center mt-2">{lookupError}</p>
+                )}
               </div>
             </div>
           </div>

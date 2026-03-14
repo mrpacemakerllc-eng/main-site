@@ -29,6 +29,12 @@ function BookletContent() {
   const [loading, setLoading] = useState(!purchaseSuccess);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
 
+  // Email lookup for returning customers
+  const [lookupEmail, setLookupEmail] = useState('');
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupError, setLookupError] = useState('');
+  const [verifiedEmail, setVerifiedEmail] = useState('');
+
   useEffect(() => {
     // If already confirmed via URL param, skip API check
     if (purchaseSuccess) {
@@ -51,8 +57,8 @@ function BookletContent() {
     checkPurchase();
   }, [purchaseSuccess]);
 
-  // TEST MODE - set to true to skip Stripe checkout
-  const TEST_MODE = true;
+  // TEST MODE - set to false for production
+  const TEST_MODE = false;
 
   const handlePurchase = async () => {
     // Track checkout started
@@ -81,6 +87,40 @@ function BookletContent() {
       alert('Failed to start checkout');
     } finally {
       setCheckoutLoading(false);
+    }
+  };
+
+  // Verify purchase by email (for returning customers)
+  const handleEmailLookup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!lookupEmail) return;
+
+    setLookupLoading(true);
+    setLookupError('');
+
+    try {
+      const res = await fetch('/api/verify-purchase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: lookupEmail,
+          productId: 'paced_ecg_booklet',
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.verified) {
+        setVerifiedEmail(lookupEmail);
+        setHasPurchased(true);
+        trackEvent('returning_customer', { product: 'paced_ecg_booklet', email: lookupEmail });
+      } else {
+        setLookupError('No purchase found for this email. Please use the email you checked out with.');
+      }
+    } catch (error) {
+      setLookupError('Something went wrong. Please try again.');
+    } finally {
+      setLookupLoading(false);
     }
   };
 
@@ -220,6 +260,38 @@ function BookletContent() {
             </p>
           </div>
 
+          {/* Already Purchased - Email Lookup */}
+          <div className="mt-12 pt-8 border-t border-slate-200">
+            <div className="bg-slate-50 rounded-2xl p-6 max-w-md mx-auto">
+              <h3 className="text-lg font-semibold text-slate-800 text-center mb-2">
+                Already purchased?
+              </h3>
+              <p className="text-slate-500 text-sm text-center mb-4">
+                Enter the email you used at checkout to access your booklet
+              </p>
+              <form onSubmit={handleEmailLookup} className="space-y-3">
+                <input
+                  type="email"
+                  value={lookupEmail}
+                  onChange={(e) => setLookupEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  className="w-full px-4 py-3 rounded-lg border border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 outline-none text-center"
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={lookupLoading}
+                  className="w-full bg-slate-800 text-white py-3 rounded-lg font-semibold hover:bg-slate-900 transition disabled:opacity-50"
+                >
+                  {lookupLoading ? 'Checking...' : 'Access My Booklet'}
+                </button>
+              </form>
+              {lookupError && (
+                <p className="text-red-500 text-sm text-center mt-3">{lookupError}</p>
+              )}
+            </div>
+          </div>
+
           {/* Note about protection */}
           <div className="mt-10 text-center text-slate-500 text-xs">
             <p>This booklet is viewable online only with personalized watermark.</p>
@@ -236,7 +308,7 @@ function BookletContent() {
           </div>
 
           <PdfViewer
-            userEmail={session?.user?.email || 'Licensed User'}
+            userEmail={verifiedEmail || session?.user?.email || 'Licensed User'}
             sessionId={stripeSessionId}
           />
 

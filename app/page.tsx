@@ -307,7 +307,7 @@ export default function Home() {
             {/* ECG Rhythm Library */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 flex flex-col">
               <div className="h-48 flex items-center justify-center mb-4 overflow-hidden">
-                <Link href="/rhythms" className="w-full">
+                <Link href="/ecg" className="w-full">
                   <div className="bg-slate-900 rounded-lg p-2 relative overflow-hidden">
                     <ECGCanvas />
                     <div className="absolute top-1 right-1 text-gray-400 text-xs bg-black/50 px-2 py-0.5 rounded">
@@ -328,10 +328,10 @@ export default function Home() {
                 <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">Interactive</span>
               </div>
               <Link
-                href="/rhythms"
+                href="/ecg"
                 className="bg-violet-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-violet-700 transition mt-auto"
               >
-                Start Learning — $19.99
+                Start Learning — $19
               </Link>
             </div>
           </div>

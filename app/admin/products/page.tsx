@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -123,137 +123,120 @@ export default function ProductsAdminPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600 text-xl">Loading...</div>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <span className="text-slate-400">Loading dashboard...</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Nav */}
-      <nav className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+    <div className="min-h-screen bg-slate-950 text-white">
+      {/* Header */}
+      <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link href="/admin" className="text-gray-500 hover:text-gray-700">
-              ← Back to Admin
+            <Link href="/" className="flex items-center gap-2 text-white font-bold">
+              <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-lg flex items-center justify-center text-slate-900 font-bold text-sm">
+                MP
+              </div>
+              <span className="hidden sm:inline">Mr Pacemaker</span>
             </Link>
-            <h1 className="text-2xl font-bold">Product Access & Analytics</h1>
+            <span className="text-slate-600">|</span>
+            <h1 className="text-lg font-semibold text-slate-200">Admin Dashboard</h1>
           </div>
-          <span className="text-gray-600">{session?.user?.email}</span>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-slate-400 hidden sm:inline">{session?.user?.email}</span>
+            <button
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="text-sm text-slate-400 hover:text-white transition"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
-      </nav>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Analytics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow">
-            <div className="text-gray-500 text-sm mb-1">Total Page Views</div>
-            <div className="text-3xl font-bold">{analytics?.totalPageViews || 0}</div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </div>
+              <span className="text-slate-400 text-sm font-medium">Page Views</span>
+            </div>
+            <div className="text-3xl font-bold">{(analytics?.totalPageViews || 0).toLocaleString()}</div>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow">
-            <div className="text-gray-500 text-sm mb-1">Total Purchases</div>
+
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-purple-500/10 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+              <span className="text-slate-400 text-sm font-medium">Purchases</span>
+            </div>
             <div className="text-3xl font-bold">{analytics?.totalPurchases || 0}</div>
           </div>
-          <div className="bg-white rounded-xl p-6 shadow">
-            <div className="text-gray-500 text-sm mb-1">Total Revenue</div>
-            <div className="text-3xl font-bold text-emerald-600">
+
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 hover:border-slate-700 transition">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-10 h-10 bg-emerald-500/10 rounded-xl flex items-center justify-center">
+                <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <span className="text-slate-400 text-sm font-medium">Revenue</span>
+            </div>
+            <div className="text-3xl font-bold text-emerald-400">
               ${((analytics?.totalRevenue || 0) / 100).toFixed(2)}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Grant Access Form */}
-          <div className="bg-white rounded-xl p-6 shadow">
-            <h2 className="text-xl font-semibold mb-4">Grant Product Access</h2>
-            <p className="text-gray-500 text-sm mb-4">
-              Give someone free access to a product without payment.
-            </p>
-            <form onSubmit={handleGrantAccess} className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Email</label>
-                <input
-                  type="email"
-                  value={grantEmail}
-                  onChange={(e) => setGrantEmail(e.target.value)}
-                  placeholder="user@email.com"
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Product</label>
-                <select
-                  value={grantProduct}
-                  onChange={(e) => setGrantProduct(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
-                >
-                  <option value="paced_ecg_booklet">Paced ECG Booklet ($19.99)</option>
-                  <option value="ecg_rhythm_library">ECG Rhythm Library ($19)</option>
-                </select>
-              </div>
-              <button
-                type="submit"
-                disabled={grantLoading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition disabled:opacity-50"
-              >
-                {grantLoading ? 'Granting...' : 'Grant Access'}
-              </button>
-            </form>
-            {message && (
-              <p className={`mt-3 text-sm ${message.includes('Error') || message.includes('Failed') || message.includes('already') ? 'text-red-500' : 'text-emerald-600'}`}>
-                {message}
-              </p>
-            )}
-
-            {/* Granted Access List */}
-            <div className="mt-6 pt-6 border-t">
-              <h3 className="text-sm font-medium text-gray-500 mb-3">
-                Manually Granted Access ({grantedAccess.length})
-              </h3>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {grantedAccess.length === 0 ? (
-                  <p className="text-gray-400 text-sm">No manual access granted yet</p>
-                ) : (
-                  grantedAccess.map((access) => (
-                    <div key={access.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                      <div>
-                        <div className="text-sm font-medium">{access.email}</div>
-                        <div className="text-xs text-gray-500">{access.productName}</div>
-                      </div>
-                      <button
-                        onClick={() => handleRevokeAccess(access.id, access.email)}
-                        className="text-red-500 hover:text-red-700 text-sm font-medium"
-                      >
-                        Revoke
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Purchases */}
-          <div className="bg-white rounded-xl p-6 shadow">
-            <h2 className="text-xl font-semibold mb-4">Recent Purchases</h2>
-            <div className="space-y-3 max-h-96 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+              <h2 className="font-semibold">Recent Purchases</h2>
+              <span className="text-xs text-slate-500 bg-slate-800 px-2 py-1 rounded-full">
+                {analytics?.recentPurchases?.length || 0} total
+              </span>
+            </div>
+            <div className="divide-y divide-slate-800 max-h-80 overflow-y-auto">
               {!analytics?.recentPurchases?.length ? (
-                <p className="text-gray-400 text-sm">No purchases yet</p>
+                <div className="px-6 py-8 text-center text-slate-500">
+                  <svg className="w-12 h-12 mx-auto mb-3 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                  <p className="text-sm">No purchases yet</p>
+                </div>
               ) : (
                 analytics.recentPurchases.map((purchase, i) => (
-                  <div key={i} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                    <div>
-                      <div className="text-sm font-medium">{purchase.email}</div>
-                      <div className="text-xs text-gray-500">{purchase.productName}</div>
+                  <div key={i} className="px-6 py-4 flex items-center justify-between hover:bg-slate-800/50 transition">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-full flex items-center justify-center text-slate-900 font-semibold text-sm">
+                        {purchase.email.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <div className="text-sm font-medium">{purchase.email}</div>
+                        <div className="text-xs text-slate-500">{purchase.productName}</div>
+                      </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-medium text-emerald-600">
-                        ${(purchase.amount / 100).toFixed(2)}
+                      <div className="text-sm font-semibold text-emerald-400">
+                        +${(purchase.amount / 100).toFixed(2)}
                       </div>
-                      <div className="text-xs text-gray-400">
-                        {new Date(purchase.createdAt).toLocaleDateString()}
+                      <div className="text-xs text-slate-500">
+                        {new Date(purchase.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </div>
                     </div>
                   </div>
@@ -261,28 +244,110 @@ export default function ProductsAdminPage() {
               )}
             </div>
           </div>
+
+          {/* Grant Access */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-800">
+              <h2 className="font-semibold">Grant Access</h2>
+              <p className="text-xs text-slate-500 mt-1">Give someone free access to a product</p>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleGrantAccess} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-2">Email Address</label>
+                  <input
+                    type="email"
+                    value={grantEmail}
+                    onChange={(e) => setGrantEmail(e.target.value)}
+                    placeholder="user@email.com"
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-2">Product</label>
+                  <select
+                    value={grantProduct}
+                    onChange={(e) => setGrantProduct(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-800 border border-slate-700 rounded-xl text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition appearance-none cursor-pointer"
+                  >
+                    <option value="paced_ecg_booklet">Paced ECG Booklet ($19.99)</option>
+                    <option value="ecg_rhythm_library">ECG Rhythm Library ($19.99)</option>
+                  </select>
+                </div>
+                <button
+                  type="submit"
+                  disabled={grantLoading}
+                  className="w-full bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 text-white py-3 rounded-xl font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {grantLoading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      Granting...
+                    </span>
+                  ) : (
+                    'Grant Access'
+                  )}
+                </button>
+              </form>
+              {message && (
+                <div className={`mt-4 px-4 py-3 rounded-xl text-sm ${message.includes('Error') || message.includes('Failed') || message.includes('already') ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+                  {message}
+                </div>
+              )}
+
+              {/* Granted Access List */}
+              {grantedAccess.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-slate-800">
+                  <h3 className="text-xs font-medium text-slate-400 mb-3">
+                    Manual Access ({grantedAccess.length})
+                  </h3>
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
+                    {grantedAccess.map((access) => (
+                      <div key={access.id} className="flex items-center justify-between bg-slate-800/50 rounded-lg px-3 py-2">
+                        <div>
+                          <div className="text-sm">{access.email}</div>
+                          <div className="text-xs text-slate-500">{access.productName}</div>
+                        </div>
+                        <button
+                          onClick={() => handleRevokeAccess(access.id, access.email)}
+                          className="text-red-400 hover:text-red-300 text-xs font-medium px-2 py-1 hover:bg-red-500/10 rounded transition"
+                        >
+                          Revoke
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Top Pages */}
-        <div className="mt-8 bg-white rounded-xl p-6 shadow">
-          <h2 className="text-xl font-semibold mb-4">Top Pages</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-6 bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-800">
+            <h2 className="font-semibold">Top Pages</h2>
+          </div>
+          <div className="p-6">
             {analytics?.topPages?.length ? (
-              analytics.topPages.map((page, i) => (
-                <div key={i} className="bg-gray-50 rounded-lg px-4 py-3">
-                  <div className="text-sm font-medium truncate" title={page.path}>
-                    {page.path || '/'}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {analytics.topPages.map((page, i) => (
+                  <div key={i} className="bg-slate-800/50 rounded-xl p-4 hover:bg-slate-800 transition">
+                    <div className="text-xs text-slate-400 truncate mb-1" title={page.path}>
+                      {page.path || '/'}
+                    </div>
+                    <div className="text-2xl font-bold">{page.views.toLocaleString()}</div>
+                    <div className="text-xs text-slate-500">views</div>
                   </div>
-                  <div className="text-2xl font-bold text-gray-700">{page.views}</div>
-                  <div className="text-xs text-gray-400">views</div>
-                </div>
-              ))
+                ))}
+              </div>
             ) : (
-              <p className="text-gray-400 text-sm col-span-4">No page view data yet</p>
+              <p className="text-slate-500 text-sm text-center py-4">No page view data yet</p>
             )}
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

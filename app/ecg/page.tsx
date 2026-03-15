@@ -1,174 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-
-// Animated ECG Strip Component
-function ECGStrip() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const width = canvas.width;
-    const height = canvas.height;
-
-    const pixelsPerMm = 3;
-    const speed = 25;
-    const bpm = 72;
-    const rrInterval = pixelsPerMm * (60 / bpm) * speed;
-
-    const baselineY = height * 0.55;
-    const amplitudeScale = height * 0.35;
-
-    const pWidth = pixelsPerMm * 2.5;
-    const prInterval = pixelsPerMm * 4;
-    const qrsWidth = pixelsPerMm * 2.5;
-    const tWidth = pixelsPerMm * 4;
-    const stSegment = pixelsPerMm * 2;
-
-    const pHeight = amplitudeScale * 0.15;
-    const qDepth = amplitudeScale * 0.1;
-    const rHeight = amplitudeScale * 1.0;
-    const sDepth = amplitudeScale * 0.2;
-    const tHeight = amplitudeScale * 0.18;
-
-    let offset = 0;
-    const scrollSpeed = pixelsPerMm * speed / 60;
-    let animationId: number;
-
-    function drawBeat(startX: number, prLengthening: number = 0): number {
-      const adjustedPrInterval = prInterval + prLengthening;
-      const pStartX = startX + pixelsPerMm * 0.5;
-      const pEndX = pStartX + pWidth;
-      const qrsStartX = pStartX + adjustedPrInterval;
-      const qrsEndX = qrsStartX + qrsWidth;
-      const stEndX = qrsEndX + stSegment;
-      const tEndX = stEndX + tWidth;
-
-      ctx!.lineTo(pStartX, baselineY);
-
-      for (let t = 0; t <= 1; t += 0.1) {
-        const x = pStartX + t * pWidth;
-        const y = baselineY - pHeight * Math.pow(Math.sin(t * Math.PI), 1.3);
-        ctx!.lineTo(x, y);
-      }
-      ctx!.lineTo(pEndX, baselineY);
-      ctx!.lineTo(qrsStartX, baselineY);
-
-      const qWidthPx = qrsWidth * 0.15;
-      ctx!.lineTo(qrsStartX + qWidthPx * 0.5, baselineY + qDepth);
-
-      const rPeakX = qrsStartX + qrsWidth * 0.35;
-      ctx!.lineTo(rPeakX, baselineY - rHeight);
-
-      const sX = qrsStartX + qrsWidth * 0.55;
-      ctx!.lineTo(sX, baselineY + sDepth);
-      ctx!.lineTo(qrsEndX, baselineY);
-      ctx!.lineTo(stEndX, baselineY);
-
-      for (let t = 0; t <= 1; t += 0.05) {
-        const x = stEndX + t * tWidth;
-        const y = baselineY - tHeight * Math.sin(t * Math.PI);
-        ctx!.lineTo(x, y);
-      }
-      ctx!.lineTo(tEndX, baselineY);
-      ctx!.lineTo(startX + rrInterval, baselineY);
-
-      return startX + rrInterval;
-    }
-
-    function draw() {
-      ctx!.fillStyle = '#fdf2f2';
-      ctx!.fillRect(0, 0, width, height);
-
-      // Grid
-      ctx!.strokeStyle = 'rgba(252, 165, 165, 0.3)';
-      ctx!.lineWidth = 0.5;
-      for (let x = 0; x < width; x += pixelsPerMm) {
-        ctx!.beginPath();
-        ctx!.moveTo(x, 0);
-        ctx!.lineTo(x, height);
-        ctx!.stroke();
-      }
-      for (let y = 0; y < height; y += pixelsPerMm) {
-        ctx!.beginPath();
-        ctx!.moveTo(0, y);
-        ctx!.lineTo(width, y);
-        ctx!.stroke();
-      }
-
-      // Bold grid every 5mm
-      ctx!.strokeStyle = 'rgba(252, 165, 165, 0.5)';
-      ctx!.lineWidth = 1;
-      for (let x = 0; x < width; x += pixelsPerMm * 5) {
-        ctx!.beginPath();
-        ctx!.moveTo(x, 0);
-        ctx!.lineTo(x, height);
-        ctx!.stroke();
-      }
-      for (let y = 0; y < height; y += pixelsPerMm * 5) {
-        ctx!.beginPath();
-        ctx!.moveTo(0, y);
-        ctx!.lineTo(width, y);
-        ctx!.stroke();
-      }
-
-      // ECG trace - Wenckebach pattern
-      ctx!.strokeStyle = '#1e293b';
-      ctx!.lineWidth = 1.5;
-      ctx!.beginPath();
-      ctx!.moveTo(0 - offset, baselineY);
-
-      let x = -offset;
-      let beatCount = 0;
-      const prLengthenings = [0, 8, 16, 24]; // Progressive PR lengthening
-
-      while (x < width + rrInterval * 2) {
-        const cyclePosition = beatCount % 5;
-        if (cyclePosition < 4) {
-          x = drawBeat(x, prLengthenings[cyclePosition]);
-        } else {
-          // Dropped beat - just P wave, no QRS
-          const pStartX = x + pixelsPerMm * 0.5;
-          ctx!.lineTo(pStartX, baselineY);
-          for (let t = 0; t <= 1; t += 0.1) {
-            const px = pStartX + t * pWidth;
-            const py = baselineY - pHeight * Math.pow(Math.sin(t * Math.PI), 1.3);
-            ctx!.lineTo(px, py);
-          }
-          ctx!.lineTo(pStartX + pWidth, baselineY);
-          ctx!.lineTo(x + rrInterval, baselineY);
-          x += rrInterval;
-        }
-        beatCount++;
-      }
-      ctx!.stroke();
-
-      offset += scrollSpeed;
-      if (offset > rrInterval * 5) offset -= rrInterval * 5;
-
-      animationId = requestAnimationFrame(draw);
-    }
-
-    draw();
-
-    return () => cancelAnimationFrame(animationId);
-  }, []);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      width={600}
-      height={150}
-      className="w-full rounded-lg"
-    />
-  );
-}
+import { useState } from 'react';
+import RhythmStrip from '../components/RhythmStrip';
 
 export default function ECGLandingPage() {
   const [currentSlide, setCurrentSlide] = useState(2);
@@ -225,17 +59,22 @@ export default function ECGLandingPage() {
             href="/rhythms"
             className="border border-slate-600 hover:border-slate-500 text-white px-6 py-3 rounded-lg font-semibold transition"
           >
-            Subscribe $9.99/mo
+            Get Full Access — $19
           </Link>
         </div>
 
         {/* ECG Strip Preview */}
         <div className="bg-slate-800 rounded-2xl p-6 mb-16">
-          <div className="relative">
-            <ECGStrip />
-            <div className="absolute bottom-2 right-3 text-slate-400 text-sm">
-              Mr. Pacemaker
-            </div>
+          <div className="relative rounded-lg overflow-hidden">
+            <RhythmStrip
+              waveformType="mobitz1"
+              heartRate={75}
+              isRunning={true}
+              height={180}
+              width={700}
+              responsive={true}
+              showOverlays={false}
+            />
           </div>
           <div className="mt-4 flex items-center justify-between">
             <div>

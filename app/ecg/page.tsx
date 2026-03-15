@@ -103,8 +103,10 @@ export default function ECGLandingPage() {
               waveformType={currentRhythm.waveformType}
               heartRate={currentRhythm.heartRate}
               isRunning={true}
-              height={160}
+              height={200}
               width={800}
+              speed={25}
+              pixelsPerMm={4}
               responsive={true}
               showOverlays={false}
             />

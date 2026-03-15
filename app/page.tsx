@@ -210,7 +210,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 bg-white border-b border-gray-100 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3">
           <nav className="flex justify-between items-center">
-            <a href="#" className="flex items-center gap-3">
+            <a href="/" className="flex items-center gap-3">
               <Image src="/logo.jpg" alt="Mr Pacemaker" width={56} height={56} className="rounded-full shadow-md" />
               <span className="font-bold text-xl text-gray-900">Mr Pacemaker LLC</span>
             </a>

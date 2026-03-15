@@ -3,22 +3,23 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import RhythmStrip from '../components/RhythmStrip';
+import { WaveformType } from '../data/rhythms';
 
-const previewRhythms = [
+const previewRhythms: { waveformType: WaveformType; heartRate: number; title: string; description: string }[] = [
   {
-    waveformType: 'nsr' as const,
+    waveformType: 'sinus',
     heartRate: 75,
     title: 'Normal Sinus Rhythm',
     description: 'Regular rhythm, P before every QRS, rate 60-100',
   },
   {
-    waveformType: 'sinusBradycardia' as const,
-    heartRate: 50,
+    waveformType: 'sinus',
+    heartRate: 45,
     title: 'Sinus Bradycardia',
-    description: 'Regular sinus rhythm, rate < 60 bpm',
+    description: 'Regular sinus rhythm, rate < 50 bpm',
   },
   {
-    waveformType: 'mobitz1' as const,
+    waveformType: 'mobitz1',
     heartRate: 75,
     title: 'Mobitz Type I (Wenckebach)',
     description: 'Progressive PR prolongation, dropped beat',

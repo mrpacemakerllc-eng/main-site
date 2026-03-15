@@ -254,11 +254,11 @@ function showResults(correct, incorrect) {
     } else if (percentage >= 60) {
         message = 'Good effort! Review the explanations and consider studying the detailed guide for deeper mastery.';
     } else {
-        message = 'Keep learning! Download the free IBHRE CCDS study guide and review ';
+        message = 'Keep learning! Download ';
     }
 
     document.getElementById('resultsMessage').innerHTML = percentage < 60
-        ? message + '<a href="IBHRE-CCDS-Guide.pdf" style="color: #0d9488; text-decoration: underline; font-weight: 600;">the free CCDS study guide</a> to strengthen your preparation.'
+        ? message + '<a href="IBHRE-CCDS-Guide.pdf" style="color: #0d9488; text-decoration: underline; font-weight: 600;">the free IBHRE CCDS study guide</a> to strengthen your preparation.'
         : message;
     document.getElementById('quizResults').classList.add('show');
 }

@@ -528,18 +528,6 @@ function RhythmReferenceContent() {
     checkPurchase();
   }, [purchaseSuccess, session?.user?.email]);
 
-  // Auto-trigger checkout if purchase=true query param (from landing page CTA)
-  useEffect(() => {
-    const shouldPurchase = searchParams.get('purchase') === 'true';
-    if (shouldPurchase && !hasPurchased && !purchaseLoading) {
-      // Slight delay to let the page render first
-      const timer = setTimeout(() => {
-        handleDirectCheckout();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-  }, [searchParams, hasPurchased, purchaseLoading]);
-
   // Handle direct checkout for ECG Library
   const handleDirectCheckout = async () => {
     trackEvent('checkout_started', { product: 'ecg_rhythm_library', price: 19 });
@@ -561,6 +549,17 @@ function RhythmReferenceContent() {
       setCheckoutLoading(false);
     }
   };
+
+  // Auto-trigger checkout if purchase=true query param (from landing page CTA)
+  useEffect(() => {
+    const shouldPurchase = searchParams.get('purchase') === 'true';
+    if (shouldPurchase && !hasPurchased && !purchaseLoading) {
+      const timer = setTimeout(() => {
+        handleDirectCheckout();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, hasPurchased, purchaseLoading]);
 
   // Verify purchase by email (for returning customers)
   const handleEmailLookup = async (e: React.FormEvent) => {

@@ -45,8 +45,8 @@ export default function ECGLandingPage() {
       <header className="border-b border-slate-800 sticky top-0 bg-slate-900/95 backdrop-blur-sm z-50">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
           <div className="flex items-center gap-1 sm:gap-2">
-            <span className="font-bold text-sm sm:text-base">ECG Rhythm Library</span>
-            <span className="text-slate-400 text-sm hidden sm:inline">by Mr Pacemaker</span>
+            <Link href="/ecg" className="font-bold text-sm sm:text-base hover:text-emerald-400 transition">ECG Rhythm Library</Link>
+            <Link href="/" className="text-slate-400 hover:text-white text-sm hidden sm:inline transition">by Mr Pacemaker</Link>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <Link href="/about" className="text-slate-400 hover:text-white text-sm hidden sm:inline">

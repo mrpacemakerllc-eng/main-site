@@ -963,7 +963,7 @@ function RhythmReferenceContent() {
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-12 sm:h-16">
             <div className="flex items-center">
-              <Link href="/" className="flex items-center">
+              <Link href="/ecg" className="flex items-center">
                 <h1 className="text-lg sm:text-2xl font-bold text-white">ECG Rhythm Library</h1>
                 {isPro ? (
                   <span className="ml-1.5 sm:ml-2 px-1.5 sm:px-2 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] sm:text-xs font-semibold rounded-full">PRO</span>

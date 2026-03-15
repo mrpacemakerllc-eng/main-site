@@ -1542,7 +1542,7 @@ function RhythmReferenceContent() {
                           >
                             {checkoutLoading ? 'Loading...' : 'Unlock Full Access'}
                           </button>
-                          <p className="text-slate-500 text-xs mt-2">$19 one-time · Lifetime access</p>
+                          <p className="text-slate-500 text-xs mt-2">$19.99 one-time · Lifetime access</p>
                         </div>
                       </div>
                     </div>
@@ -1674,7 +1674,7 @@ function RhythmReferenceContent() {
 
               {/* One-time Price */}
               <div className="bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-xl p-4 mb-4 border border-emerald-500/30">
-                <div className="text-3xl font-bold text-white mb-1">$19</div>
+                <div className="text-3xl font-bold text-white mb-1">$19.99</div>
                 <p className="text-sm text-slate-400">One-time payment · Lifetime access</p>
               </div>
 
@@ -1684,7 +1684,7 @@ function RhythmReferenceContent() {
                   disabled={checkoutLoading}
                   className="block w-full text-white py-3.5 rounded-lg font-semibold transition disabled:opacity-50 text-lg bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600"
                 >
-                  {checkoutLoading ? 'Loading...' : 'Get Lifetime Access — $19'}
+                  {checkoutLoading ? 'Loading...' : 'Get Lifetime Access — $19.99'}
                 </button>
                 <button
                   onClick={() => setShowUpgradeModal(false)}

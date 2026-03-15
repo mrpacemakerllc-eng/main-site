@@ -66,7 +66,7 @@ export default function ECGLandingPage() {
         {/* Badge */}
         <div className="mb-4 sm:mb-6">
           <span className="text-emerald-400 text-xs sm:text-sm font-medium">
-            49 animated rhythms · 3 Free · Full access $19
+            49 animated rhythms · 3 Free · Full access $19.99
           </span>
         </div>
 
@@ -91,7 +91,7 @@ export default function ECGLandingPage() {
             href="/rhythms?purchase=true"
             className="border border-slate-600 hover:border-slate-500 text-white px-6 py-3 rounded-lg font-semibold transition text-center"
           >
-            Get Full Access — $19
+            Get Full Access — $19.99
           </Link>
         </div>
 
@@ -247,7 +247,7 @@ export default function ECGLandingPage() {
         {/* Ready CTA */}
         <section className="mb-12 sm:mb-16">
           <h2 className="text-xl sm:text-2xl font-bold mb-2">Ready?</h2>
-          <p className="text-slate-400 text-sm sm:text-base mb-4 sm:mb-6">Try 3 rhythms free. Unlock all 49 for $19.</p>
+          <p className="text-slate-400 text-sm sm:text-base mb-4 sm:mb-6">Try 3 rhythms free. Unlock all 49 for $19.99.</p>
           <Link
             href="/rhythms"
             className="inline-block bg-emerald-500 hover:bg-emerald-400 text-white px-6 sm:px-8 py-3 rounded-lg font-semibold transition text-sm sm:text-base"

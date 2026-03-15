@@ -21,25 +21,37 @@ export async function GET(req: NextRequest) {
     // Get total page views
     const totalPageViews = await prisma.pageView.count();
 
-    // Get total purchases and revenue
+    // Get all purchases
     const purchases = await prisma.purchase.findMany({
-      where: {
-        status: 'completed',
-      },
-    });
-
-    const totalPurchases = purchases.length;
-    const totalRevenue = purchases.reduce((sum, p) => sum + p.amount, 0);
-
-    // Get recent purchases
-    const recentPurchases = await prisma.purchase.findMany({
       where: {
         status: 'completed',
       },
       orderBy: {
         createdAt: 'desc',
       },
-      take: 10,
+    });
+
+    const totalPurchases = purchases.length;
+    const totalRevenue = purchases.reduce((sum, p) => sum + p.amount, 0);
+
+    // Get all registered users
+    const users = await prisma.user.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        createdAt: true,
+      },
+    });
+
+    // Get all quiz leads (emails from quizzes)
+    const quizLeads = await prisma.quizLead.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
     });
 
     // Get top pages
@@ -61,12 +73,55 @@ export async function GET(req: NextRequest) {
       views: pv._count.path,
     }));
 
+    // Build activity feed - combine all events
+    const activity: Array<{
+      type: 'purchase' | 'signup' | 'quiz_lead';
+      email: string;
+      details: string;
+      createdAt: string;
+    }> = [];
+
+    purchases.forEach(p => {
+      activity.push({
+        type: 'purchase',
+        email: p.email,
+        details: `Bought ${p.productName} ($${(p.amount / 100).toFixed(2)})`,
+        createdAt: p.createdAt.toISOString(),
+      });
+    });
+
+    users.forEach(u => {
+      activity.push({
+        type: 'signup',
+        email: u.email,
+        details: 'Created account',
+        createdAt: u.createdAt.toISOString(),
+      });
+    });
+
+    quizLeads.forEach(q => {
+      activity.push({
+        type: 'quiz_lead',
+        email: q.email,
+        details: q.source ? `Quiz: ${q.source}` : 'Took a quiz',
+        createdAt: q.createdAt.toISOString(),
+      });
+    });
+
+    // Sort by date
+    activity.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
     return NextResponse.json({
       totalPageViews,
       totalPurchases,
       totalRevenue,
-      recentPurchases,
+      totalUsers: users.length,
+      totalQuizLeads: quizLeads.length,
+      recentPurchases: purchases,
+      users,
+      quizLeads,
       topPages,
+      activity,
     });
   } catch (error) {
     console.error('Failed to fetch analytics:', error);

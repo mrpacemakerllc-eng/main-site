@@ -331,7 +331,7 @@ export default function Home() {
                 href="/ecg"
                 className="bg-violet-600 text-white text-center py-3 rounded-lg font-semibold hover:bg-violet-700 transition mt-auto"
               >
-                Start Learning — $19
+                Start Learning — $19.99
               </Link>
             </div>
           </div>

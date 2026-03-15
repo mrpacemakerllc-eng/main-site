@@ -247,19 +247,32 @@ function showResults(correct, incorrect) {
     document.getElementById('percentage').textContent = percentage + '%';
 
     let message = '';
+    let showResources = false;
+
     if (percentage >= 90) {
         message = 'Excellent performance! You demonstrate advanced knowledge of IBHRE CCDS concepts.';
     } else if (percentage >= 80) {
         message = 'Great job! You have a strong understanding of cardiac device specialist principles.';
-    } else if (percentage >= 60) {
-        message = 'Good effort! Review the explanations and consider studying the detailed guide for deeper mastery.';
     } else {
-        message = 'Keep learning! Download ';
+        message = 'Keep learning! Master these concepts with our study resources:';
+        showResources = true;
     }
 
-    document.getElementById('resultsMessage').innerHTML = percentage < 60
-        ? message + '<a href="IBHRE-CCDS-Guide.pdf" style="color: #0d9488; text-decoration: underline; font-weight: 600;">the free IBHRE CCDS study guide</a> to strengthen your preparation.'
-        : message;
+    let resourcesHtml = '';
+    if (showResources) {
+        resourcesHtml = `
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                <a href="IBHRE-CCDS-Guide.pdf" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: linear-gradient(135deg, #0d9488, #0891b2); color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+                    Free IBHRE CCDS Study Guide (PDF)
+                </a>
+                <a href="https://www.amazon.com/Basics-Cardiac-Devices-Visual-Pacemakers/dp/B0FDHV3DNF" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; background: #FF9900; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">
+                    Basics of Cardiac Devices on Amazon
+                </a>
+            </div>
+        `;
+    }
+
+    document.getElementById('resultsMessage').innerHTML = message + resourcesHtml;
     document.getElementById('quizResults').classList.add('show');
 }
 

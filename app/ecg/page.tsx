@@ -256,8 +256,15 @@ export default function ECGLandingPage() {
           </Link>
         </section>
 
+        {/* Acknowledgment */}
+        <div className="border-t border-slate-800 pt-6 sm:pt-8 mb-6">
+          <p className="text-slate-400 text-xs sm:text-sm">
+            <span className="text-emerald-400 font-medium">Medical Review:</span> Special thanks to Dr. Robin Singh, Cardiac Electrophysiologist, for reviewing content and ensuring clinical accuracy.
+          </p>
+        </div>
+
         {/* Disclaimer */}
-        <p className="text-slate-600 text-[10px] sm:text-xs border-t border-slate-800 pt-6 sm:pt-8">
+        <p className="text-slate-600 text-[10px] sm:text-xs">
           Disclaimer: ECG Rhythm Library is for educational purposes only. Not a substitute for professional medical education or clinical judgment. Always follow institutional protocols.
         </p>
       </main>

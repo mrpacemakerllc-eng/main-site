@@ -108,7 +108,7 @@ export default function ECGLandingPage() {
               speed={25}
               pixelsPerMm={4}
               responsive={true}
-              showOverlays={false}
+              leadLabel="II"
             />
           </div>
           <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

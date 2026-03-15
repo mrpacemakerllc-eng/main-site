@@ -4,8 +4,39 @@ import Link from 'next/link';
 import { useState } from 'react';
 import RhythmStrip from '../components/RhythmStrip';
 
+const previewRhythms = [
+  {
+    waveformType: 'nsr' as const,
+    heartRate: 75,
+    title: 'Normal Sinus Rhythm',
+    description: 'Regular rhythm, P before every QRS, rate 60-100',
+  },
+  {
+    waveformType: 'sinusBradycardia' as const,
+    heartRate: 50,
+    title: 'Sinus Bradycardia',
+    description: 'Regular sinus rhythm, rate < 60 bpm',
+  },
+  {
+    waveformType: 'mobitz1' as const,
+    heartRate: 75,
+    title: 'Mobitz Type I (Wenckebach)',
+    description: 'Progressive PR prolongation, dropped beat',
+  },
+];
+
 export default function ECGLandingPage() {
-  const [currentSlide, setCurrentSlide] = useState(2);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const goToPrev = () => {
+    setCurrentSlide((prev) => (prev === 0 ? previewRhythms.length - 1 : prev - 1));
+  };
+
+  const goToNext = () => {
+    setCurrentSlide((prev) => (prev === previewRhythms.length - 1 ? 0 : prev + 1));
+  };
+
+  const currentRhythm = previewRhythms[currentSlide];
 
   return (
     <div className="min-h-screen bg-slate-900 text-white">
@@ -56,7 +87,7 @@ export default function ECGLandingPage() {
             Try free rhythms
           </Link>
           <Link
-            href="/rhythms"
+            href="/rhythms?purchase=true"
             className="border border-slate-600 hover:border-slate-500 text-white px-6 py-3 rounded-lg font-semibold transition text-center"
           >
             Get Full Access — $19
@@ -67,8 +98,9 @@ export default function ECGLandingPage() {
         <div className="bg-slate-800 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-12 sm:mb-16">
           <div className="relative rounded-lg overflow-hidden">
             <RhythmStrip
-              waveformType="mobitz1"
-              heartRate={75}
+              key={currentSlide}
+              waveformType={currentRhythm.waveformType}
+              heartRate={currentRhythm.heartRate}
               isRunning={true}
               height={160}
               width={800}
@@ -78,16 +110,22 @@ export default function ECGLandingPage() {
           </div>
           <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <div className="text-emerald-400 font-medium text-sm sm:text-base">Mobitz Type I (Wenckebach)</div>
-              <div className="text-slate-500 text-xs sm:text-sm">Progressive PR prolongation, dropped beat</div>
+              <div className="text-emerald-400 font-medium text-sm sm:text-base">{currentRhythm.title}</div>
+              <div className="text-slate-500 text-xs sm:text-sm">{currentRhythm.description}</div>
             </div>
             <div className="flex items-center gap-2">
-              <button className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition">
+              <button
+                onClick={goToPrev}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition"
+              >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              <button className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition">
+              <button
+                onClick={goToNext}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition"
+              >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -96,10 +134,11 @@ export default function ECGLandingPage() {
           </div>
           {/* Dots */}
           <div className="flex justify-center gap-2 mt-3 sm:mt-4">
-            {[0, 1, 2].map((i) => (
-              <div
+            {previewRhythms.map((_, i) => (
+              <button
                 key={i}
-                className={`w-2 h-2 rounded-full ${i === currentSlide ? 'bg-emerald-400' : 'bg-slate-600'}`}
+                onClick={() => setCurrentSlide(i)}
+                className={`w-2 h-2 rounded-full transition ${i === currentSlide ? 'bg-emerald-400' : 'bg-slate-600 hover:bg-slate-500'}`}
               />
             ))}
           </div>

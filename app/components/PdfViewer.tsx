@@ -7,10 +7,13 @@ interface PdfViewerProps {
   sessionId?: string;
 }
 
+const TOTAL_PAGES = 28;
+
 export default function PdfViewer({ userEmail, sessionId }: PdfViewerProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isBlurred, setIsBlurred] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Build PDF URL with access parameters
   const buildPdfUrl = () => {
@@ -69,7 +72,7 @@ export default function PdfViewer({ userEmail, sessionId }: PdfViewerProps) {
     <div className="pdf-viewer-container">
       {/* PDF Display - clean white page only */}
       <div
-        className="pdf-viewer relative"
+        className="pdf-viewer relative overflow-hidden rounded-xl"
         style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
         onContextMenu={(e) => e.preventDefault()}
       >
@@ -106,7 +109,8 @@ export default function PdfViewer({ userEmail, sessionId }: PdfViewerProps) {
         )}
 
         <iframe
-          src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+          key={currentPage}
+          src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH&page=${currentPage}`}
           className="w-full border-0 bg-white"
           style={{ height: '85vh', minHeight: '700px', background: 'white' }}
           onLoad={() => setLoading(false)}
@@ -115,6 +119,27 @@ export default function PdfViewer({ userEmail, sessionId }: PdfViewerProps) {
             setError('Failed to load PDF. Please refresh.');
           }}
         />
+      </div>
+
+      {/* Page navigation */}
+      <div className="flex items-center justify-center gap-4 mt-4">
+        <button
+          onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); setLoading(true); }}
+          disabled={currentPage === 1}
+          className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition"
+        >
+          ← Prev
+        </button>
+        <span className="text-slate-600 text-sm">
+          Page {currentPage} of {TOTAL_PAGES}
+        </span>
+        <button
+          onClick={() => { setCurrentPage(p => Math.min(TOTAL_PAGES, p + 1)); setLoading(true); }}
+          disabled={currentPage === TOTAL_PAGES}
+          className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition"
+        >
+          Next →
+        </button>
       </div>
 
       <p className="text-center text-slate-500 text-xs mt-4">
